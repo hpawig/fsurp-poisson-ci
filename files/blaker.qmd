@@ -17,10 +17,15 @@ library(tidyverse)
 ```{r}
 # calculate MTP for Poisson rvs
 get_mtp <- function(x, lambda) {
-  if (x == 0) {
-    return(min(dpois(0, lambda), 1)) # we know upper tail prob for x=0 is always 1.
+  if (x != 0) {
+    return(# general case
+      min(ppois(x, lambda), # P(X<=x)
+          (1-ppois(x-1, lambda)))  # P(X >= x)
+      ) 
   } else {
-    return(min(ppois(x, lambda), 1-ppois(x-1, lambda))) # general case
+    return(
+      min(ppois(0, lambda), 1) # P(X >= 0) = 1 always
+    ) 
   }
 }
 ```
@@ -38,12 +43,11 @@ get_mtp <- function(x, lambda) {
 ```{r}
 blaker_CI <- function(x, conf.level = 0.95, digits = 3) {
   # set up
-  x0 <- seq(0,x*15,1)
-  alpha <- 1-conf.level
-  lambda <- seq(0,x*15, 1*10^(-digits))
+  x0 <- seq(from = 0, to = x*10, by = 1)
+  alpha <- 1 - conf.level
+  lambda <- seq(0, x*10, 1*10^(-digits))
   AS <- c() # initialize acceptance set vec
   p_lambda <- c() # will be used to store all lambda s.t. x in AS_lambda (*plausible* lambdas)
-  
   
   for (i in 1:length(lambda)) {
     AS <- c() # initialize acceptance set vec for lambda[i]
@@ -57,7 +61,9 @@ blaker_CI <- function(x, conf.level = 0.95, digits = 3) {
         if (temp_mtp <= obs_mtp) {
           AS <- c(AS, x0[j]) # AS will contain all x's resulting in MTP <= obs_mtp at current lambda
           
-        # x's in acceptance sets MUST be consecutive
+        # x's in acceptance sets MUST be consecutive. 
+        # so stop calculating mtp for x0 
+        # after first x0>x has greater mtp
         } else if ((x0[j+1] > x) && (get_mtp(x0[j+1], lambda[i]) > obs_mtp)) { 
           break
         }
@@ -77,4 +83,13 @@ blaker_CI <- function(x, conf.level = 0.95, digits = 3) {
   return(data.frame(x,lower,upper))
 }
 
+
+```
+
+### testing
+
+```{r}
+blaker_CI(x=13, d=3)
+
+blaker_CI(x=15, d=3)
 ```
