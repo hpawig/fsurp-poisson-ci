@@ -12,6 +12,19 @@ editor: visual
 library(tidyverse)
 ```
 
+## function to calculate mtp
+
+```{r}
+# calculate MTP for Poisson rvs
+get_mtp <- function(x, lambda) {
+  if (x == 0) {
+    return(dpois(0, lambda)) # we know upper tail prob for x=0 is always 1.
+  } else {
+    return(min(ppois(x, lambda), ppois(x-1, lambda, lower.tail = FALSE))) # general case
+  }
+}
+```
+
 # main function
 
 -   Blaker's method involves:
@@ -23,24 +36,41 @@ library(tidyverse)
     -   observed $x \in A_\theta$ if $P(X \in A_\theta) > \alpha$. Record $\theta$
 
 ```{r}
-blaker_CI <- function(x, K, conf.level = 0.95) {
+blaker_CI <- function(x, conf.level = 0.95, digits = 3) {
   # set up
-  x0 <- x
+  x0 <- seq(0,x*10,1)
   alpha <- 1-conf.level
-  lambda <- seq(0,K, 0.001)
+  lambda <- seq(0,x*10, 1*10^(-digits))
+  AS <- c() # initialize acceptance set vec
+  p_lambda <- c() # will be used to store all *plausible* lambda's for obs x.
   
   
   for (i in 1:length(lambda)) {
-      obs_mtp <- min(ppois(x0, lambda), ppois(x0-1, lambda, lower.tail = F))
+    AS <- c() # initialize acceptance set vec for lambda
+    # calculate obs mtp for current lambda
+      obs_mtp <- get_mtp(x, lambda[i])
       
+      # find all x's with MTP <= observed mtp
+      for (j in 1:length(x0)) {
+        temp_mtp <- get_mtp(x0[j], lambda[i]) 
+        if (temp_mtp <= obs_mtp) {
+          AS <- c(AS, x0[j]) # AS will contain all x's resulting in MTP <= obs_mtp
+        }
+      }
+      
+      # calculate probability of X being in acceptance set
+      prob <- sum(dpois(AS[1]:AS[length(AS)], lambda = lambda[i]))
+      
+      # determine if obs x is in AS for current theta[i] by comparing to alpha
+      if (prob > alpha) {
+        p_lambda <- c(p_lambda, lambda[i])
+      }
   }
-  # compute min tail probability of observed x (mtp)
-  # for fixed lambda
-  
-  obs_mtp <- min(ppois(x, lambda), ppois(x-1, lambda, lower.tail = F))
-  print(obs_mtp)
+  lower <- min(p_lambda)
+  upper <- max(p_lambda)
+  return(data.frame(x,lower,upper))
 }
 
-blaker_CI(x = 22, lambda = K)
+blaker_CI(x = 3)
 
 ```
