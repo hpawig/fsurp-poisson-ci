@@ -1,0 +1,287 @@
+---
+title: "R functions for Large Sample Methods"
+author: "Hannah Pawig"
+format: html
+editor: visual
+---
+
+```{r}
+#| echo: false
+#| message: false
+library(tidyverse)
+```
+
+# Introduction
+
+In this document, I will be writing up functions to compute the confidence intervals using three different large sample methods for Poisson distributions: Wald, Rao-Score, and Wilks Likelihood Ratio. These functions are from methods from Holladay (2019). Below you will find coverage probability plots for these functions and summaries of how the methods work.
+
+# Functions
+
+## Wald (W) Method
+
+X represents the observed mean of a Poisson distributed sample. X is the maximum likelihood estimator for $\lambda$, the Poisson parameter known as population mean.
+
+```{r}
+# default confidence level = 95%
+wald_CI <- function(x, conf.level = 0.95) {
+  alpha <- 1 - conf.level
+  # we are in n = 1 case
+  lambda_hat <- x
+  z_star <- qnorm(1-(alpha/2)) # critical value
+  
+  # lower bound 
+  lwr <- lambda_hat - z_star*sqrt(x)
+  uppr <- lambda_hat + z_star*sqrt(x)
+
+  ci <- data.frame(lwr,uppr)
+  return(ci)
+}
+
+
+```
+
+## 
+
+## Rao's Score (S) Method
+
+```{r}
+# default confidence level = 95%
+rao_score_CI <- function(x, conf.level = 0.95) {
+  alpha <- 1-conf.level
+  # we are in a single observation case
+  lambda_hat <- mean(x) 
+  # calculate critical value
+  z_star <- qnorm(1-(alpha/2)) # critical value
+  
+  
+  # bound calculations
+  lwr <- (lambda_hat + (1/2)*z_star^2) - z_star*sqrt(lambda_hat + (1/4)*z_star^2)
+  uppr <- (lambda_hat + (1/2)*z_star^2) + z_star*sqrt(lambda_hat + (1/4)*z_star^2)
+  
+  return(data.frame(lwr,uppr))
+}
+
+rao_score_CI(50)
+
+```
+
+## Wilks Likelihood Ratio (LR) method
+
+```{r}
+
+wilksLR_CI <- function(x, conf.level = 0.95) {
+  x <- sum(x) # formula is for a sum 
+  n <- length(x)
+  t <- x # start at MLE. t represents lambda
+  alpha <- 1-conf.level
+  
+  
+  # calculating lower limit
+  lwr <- c() # initialize lower bound
+  while (length(lwr) == 0) {
+
+    if ((2*(log(dpois(x,lambda=x))-log(dpois(x,lambda=t)))) <= qchisq(1-alpha, df=1))  {
+        lwr <- lwr # keeps lwr empty
+      } else {
+        lwr <- t # sets lwr to current lambda that breaks inequality
+      }
+  
+    t <- t - 0.001
+  }
+  
+  t <- x # reset lambda at MLE
+  
+   # calculating upper limit
+  
+  uppr <- c() # initialize uppr (same process as lower)
+  while (length(uppr) == 0) {
+    if ((2*(log(dpois(x, lambda = x))-log(dpois(x, lambda = t)))) <= qchisq(1-alpha, df=1)) {
+      uppr <- uppr
+    } else {
+      uppr <- t
+    
+    }
+    
+  t <- t + 0.001
+  }
+  return(data.frame(lwr,uppr))
+}
+
+wilksLR_CI(22)
+```
+
+### 
+
+# Coverage Probability (CP) Plots
+
+(Using a fixed $\alpha$=..., these plots will be a function of the Poisson parameter: sample mean denoted $\lambda$)
+
+## 
+
+## Wald
+
+### note
+
+You can make this more efficient by incrementing x's until one creates a CI that no longer contains the given lambda. maybe while loop?
+
+```{r covprob}
+# creates a function calculating coverage probability for one lambda
+
+cov_prob_Wald <- function(lambda, conf.level=0.95) {
+
+    captured <- c() # initialize
+    for (x in 0:1000) {
+      CI_temp <- wald_CI(x, conf.level)
+    
+      if (dplyr::between(lambda, CI_temp$lwr, CI_temp$uppr)) {
+        captured <- c(captured,x)
+      }
+    }
+    
+  # sum pmf of each x that captures lambda in its CI
+   p <- 0
+    for (y in 1:length(captured)) {
+      p <- p + dpois(captured[y], lambda=lambda)
+
+    }
+  
+ # this is the coverage probability for lambda
+  return(p)
+}
+
+```
+
+```{r}
+
+lambda <- c(seq(0, 50, by = 0.05))
+
+coverage <- c()
+for (i in (1:length(lambda))) {
+  coverage[i] <- cov_prob_Wald(lambda=lambda[i])
+}
+coverage_table <- data.frame(lambda, coverage)
+
+coverage_table |> 
+  ggplot(mapping = aes(x = lambda,
+                       y = coverage)) +
+  geom_line() +
+  geom_line(y = 0.95, col = "red", linetype = "dashed") +
+  labs(x = expression(lambda),
+       y = "Coverage Probability",
+       title = "Coverage Probability for the Wald Method",
+       subtitle = "for values of the Poisson mean parameter up to 50") +
+  annotate("text", x = 53, y = 0.95, label = "0.95", color = "red") +
+  scale_x_continuous(breaks = seq(0,50,10))
+
+```
+
+## S
+
+```{r}
+# creating a coverage probability function given one lambda for S method
+cov_prob_Score<- function(lambda, conf.level=0.95) {
+
+    captured <- c() # initialize
+    for (x in 0:1000) {
+      CI_temp <- rao_score_CI(x, conf.level)
+    
+      if (dplyr::between(lambda, CI_temp$lwr, CI_temp$uppr)) {
+        captured <- c(captured,x)
+      }
+    }
+    
+  # sum pmf of each x that captures lambda in its CI
+   p <- 0
+    for (y in 1:length(captured)) {
+      p <- p + dpois(captured[y], lambda=lambda)
+
+    }
+  
+ # this is the coverage probability for lambda
+  return(p)
+}
+
+```
+
+```{r}
+# create data frame of all coverage probabilities for lambda 0,...,50
+lambda <- c(seq(0,50,0.05))
+coverage <- c() # initialize coverage
+for (i in (1:length(lambda))) {
+  coverage[i] <- cov_prob_Score(lambda=lambda[i])
+}
+coverage_table <- data.frame(lambda, coverage)
+
+# plot 
+coverage_table |> 
+  ggplot(mapping = aes(x = lambda,
+                       y = coverage)) +
+  geom_line() +
+  geom_line(y = 0.95, col = "red", linetype = "dashed") +
+  labs(x = expression(lambda),
+       y = "Coverage Probability",
+       title = "Coverage Probability for the Rao-Score Method",
+       subtitle = "for values of the Poisson mean parameter up to 50") +
+  annotate("text", x = 53, y = 0.95, label = "0.95", color = "red") +
+  scale_x_continuous(breaks = seq(0,50,10))
+```
+
+## LR
+
+```{r}
+# had to skip lambda = 0
+# creating a coverage probability function given one lambda for S method
+cov_prob_LR<- function(lambda, conf.level=0.95) {
+
+    captured <- c() # initialize
+    for (x in 1:100) {
+      CI_temp <- wilksLR_CI(x, conf.level)
+    
+      if (dplyr::between(lambda, CI_temp$lwr, CI_temp$uppr)) {
+        captured <- c(captured,x) # keep x's that result in CI capturing lambda
+      }
+    }
+    
+  # sum pmf of each x that captures lambda in its CI
+   p <- 0
+    for (y in 1:length(captured)) {
+      p <- p + dpois(captured[y], lambda=lambda)
+
+    }
+  
+ # this is the coverage probability for lambda
+  return(p)
+}
+
+
+
+```
+
+```{r}
+lambda <- c(seq(1,50,by=0.1))
+coverage <- c() # initialize coverage
+for (i in (1:length(lambda))) {
+  coverage[i] <- cov_prob_LR(lambda = lambda[i])
+}
+coverage_table <- data.frame(lambda, coverage)
+
+
+
+```
+
+```{r CP-LRplot}
+# plot
+coverage_table |> 
+  ggplot(mapping = aes(x = lambda,
+                       y = coverage)) +
+  geom_line() +
+  geom_line(y = 0.95, col = "red", linetype = "dashed") +
+  labs(x = expression(lambda),
+       y = "Coverage Probability",
+       title = "Coverage Probability for Wilks Likelihood Ratio Method",
+       subtitle = "for values of the Poisson mean parameter up to 50") +
+  annotate("text", x = 53, y = 0.95, label = "0.95", color = "red") +
+  scale_x_continuous(breaks = seq(0,50,10))
+```
+
+# 

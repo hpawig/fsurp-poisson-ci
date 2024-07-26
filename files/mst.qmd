@@ -1,0 +1,278 @@
+---
+title: "Modified Stern (MST) Function"
+author: "Hannah Pawig"
+format: html
+editor: visual
+---
+
+## f
+
+```{r}
+# function that outputs a function in order to use uniroot(a-b)
+a <- 0
+b <- 2
+f2 <- function(lambda) { 
+    return(ppois(2, lambda) - 0.95)
+  }
+AC_max_coords(0,1)$lambda
+AC_max_coords(1,2)$lambda
+
+uniroot(f2, c(0,1.414214))$root
+```
+
+## AC max coord function
+
+```{r}
+# at AC A-B, this function calculates the maximum coordinates (lambda, max-prob)
+AC_max_coords <- function(a,b) {
+   # using prop 2.2a formula. 
+  lambda <- prod(a:b)^(1/(b-a+1))
+  max_prob <- ppois(b+1, lambda) - ppois(a, lambda)
+  return(data.frame(lambda, max_prob))
+}
+
+AC_max_coords(1,8)$lambda
+```
+
+## test_under_coverage
+
+```{r}
+conf.level <- 0.95
+test_under_coverage <- function(A,B) {
+  
+   # this is  lambda max for NEXT AC curve given current a-b
+    lambda_max <- AC_max_coords(A, B)$lambda
+    max_prob <- AC_max_coords(A, B)$max_prob
+  
+    # cases to decide how to change a-b
+    
+    if (max_prob < conf.level) {
+      
+        return(TRUE)
+    
+      } else {
+      
+      return(FALSE)
+    }
+}
+
+```
+
+## 1st approach
+
+```{r}
+# K = largest number of x to create a CI for.
+mst_CIs <- function(K, conf.level = 0.95) {
+  x <- c(0:K)
+
+  # initialize necessary vectors
+  lower <- c()
+  upper <- c()
+  root <- c() # will store all roots
+  
+  a <- 0 # starting a
+  b <- 0 # starting b
+  i <- 1 # will represent the pair number i.e. 0-0 is pair i=1; purpose is to keep track of
+         # roots from certain pairs
+  
+  f <- function(lambda) { 
+    return((ppois(b, lambda) - ppois(a-1, lambda)) - 0.95)
+  }
+  
+  # step 1
+  lower[i] <- 0
+   root[i] <- uniroot(f, c(0,K))$root
+  
+   
+   while (a < (K+1)) {
+     # step 2
+
+    # cases to decide how to change a-b
+    
+      if((test_under_coverage(a+1,b+1) == T)) {
+        a2 <- a+1
+        b2 <- b+1
+        
+        f2 <- function(lambda) { 
+        return((ppois(b2, lambda) - ppois(a2-1, lambda)) - 0.95)
+        }
+        
+        lambda_max <- AC_max_coords(a2, b2)$lambda 
+        root[i] <- uniroot(f2, c(lambda_max,K))$root
+         
+       
+        lower[b+1] <- root[i] # lower limit for b + 1, aka new b
+        b <- b + 1
+        i <- i + 1
+        
+      } else {
+      a <- a + 1
+      b <- b + 1
+      i <- i + 1
+      
+      # setting coincidental endpoint (by prop 2.2c)
+      lower[b] <- AC_max_coords(a, b)$lambda
+      upper[a-1] <- AC_max_coords(a, b)$lambda
+       
+      }
+  
+  }
+  lower <- lower[1:length(upper)]
+  x <- x[1:length(upper)] # ensuring all vectors are equal in length. 
+                          # b/c extra upper endpoints will be cut off
+  root <- root[1:length(upper)] 
+                          
+  return(data.frame(x, lower, upper, root))
+}
+
+mst_CIs(K=20)
+
+
+
+```
+
+## 2nd approach
+
+### works better so far
+
+```{r}
+conf.level <- 0.95
+test_coverage <- function(A,B) {
+  
+   # this is  lambda max for AC curve given current a-b
+    lambda_max <- AC_max_coords(A, B)$lambda
+    max_prob <- AC_max_coords(A, B)$max_prob
+  
+    # cases to decide how to change a-b
+    
+    if (max_prob > conf.level) {
+      
+        return(TRUE)
+    
+      } else {
+      
+      return(FALSE)
+    }
+}
+```
+
+```{r}
+# K = largest number of x to create a CI for.
+OC <- function(K, conf.level = 0.95) {
+  x <- c(0:K)
+
+  # initialize necessary vectors
+  lower <- c()
+  upper <- c()
+  root <- c() # will store all roots
+  
+  a <- 0 # starting a
+  b <- 0 # starting b
+  root[1] <- 0
+  i <- 2 # will represent the pair number i.e. 0-0 is pair i=1; purpose is to keep track of
+         # roots from certain pairs
+
+  f <- function(lambda) {
+    return((ppois(b, lambda) - ppois(a-1, lambda)) - 0.95)
+  }
+  
+  # step 1
+  lower[i] <- 0
+  root[i] <- uniroot(f, c(0,K))$root
+  
+   
+   while (a < (K+2)) {
+     # step 2
+
+    # cases to decide how to change a-b
+    
+      if((test_coverage(a+1,b+1) != T)) {
+         f <- function(lambda) { 
+          if (a > 0) {
+            return((ppois(b, lambda) - ppois(a-1, lambda)) - 0.95)
+          } else {
+            return(ppois(a, lambda) - 0.95)
+          }
+      }
+  
+
+         
+        lower[b+1] <- root[i-1] # lower limit for b + 1, aka new b
+        b <- b + 1
+        i <- i + 1
+        
+
+        start <- AC_max_coords(a, b)$lambda
+        a0 <- (a+1); b0 <- (b+1)
+        while (sum(dpois(a0:b0,
+                     AC_max_coords(a0, b0)$lambda)) >= conf.level) {
+          a0 <- a0+1 
+          b0 <- b0+1
+        } 
+        end <- AC_max_coords(a0, b0)$lambda
+      
+        
+        root[i] <- uniroot(f, c(start,end))$root
+        
+      
+        
+      } else {
+
+        # step 3
+      a <- a + 1
+      b <- b + 1
+      i <- i + 1
+      
+      
+      # setting coincidental endpoint (by prop 2.2c)
+      lower[b] <- AC_max_coords(a, b)$lambda
+      upper[a-1] <- lower[b]
+       
+      }
+  
+  }
+  lower <- lower[1:(K+1)]
+  upper <- upper[1:(K+1)]
+  x <- x[1:(K+1)] # ensuring all vectors are equal in length. 
+                          # b/c extra upper endpoints will be cut off
+  root <- root[1:(K+1)] 
+                          
+  return(data.frame(x, lower, upper, root))
+}
+
+
+test <- OC(K=20); 
+test |> 
+  mutate(lower = round(lower, 2),
+         upper = round(upper, 2))
+
+
+
+```
+
+\
+\
+\
+\
+
+## graphing specific AC
+
+```{r}
+# code to graph a specific AC.
+
+plot(y = ppois(1, seq(0,15,0.0001))-ppois(0,seq(0,15,0.0001)), x = seq(0,15, by = 0.0001), # AC 2-2
+               type = "l", xlim = c(0,16), ylim = c(0,1),
+     xlab = expression(lambda),
+     ylab = "Coverage Probability",
+     main = expression("Poisson("~lambda~")"))
+
+lines(y = (ppois(2, seq(0, 15,  by = 0.0001)) -
+                  ppois(0, seq(0,15,0.0001))), # AC 1-2
+      x = seq(0, 15, by = 0.0001), type = "l")
+
+abline(v=3.764351, col="blue")
+abline(v = 4.460143, col = "red")
+abline(h = 0.95, col = "red")
+
+
+```

@@ -1,0 +1,149 @@
+---
+title: "Minimal Cardinality"
+author: "Hannah Pawig"
+format: html
+editor: visual
+---
+
+```{r}
+#| message: false
+#| echo: false
+
+library(tidyverse)
+
+```
+
+# 
+
+plot of acceptance curves for Poisson
+
+```{r}
+conf.level <- 0.95
+
+
+# getting all possible ACs above 1-alpha ?
+A <- c(); B <- c(); cardinality <- c()
+# 
+for (a in 0:24) {
+  b <- a
+  while (b <= 24) {
+    lambda_max <- prod(a:b)^(1/(b-a+1)) # using prop 2.2a formula
+    max_prob <- ppois(b, lambda_max) - ppois(a-1, lambda_max)
+    if (max_prob > conf.level) {
+      A <- c(A, a)
+      B <- c(B, b)
+      cardinality <- c(cardinality, length(a:b)) 
+    }
+    b <- b + 1
+    
+  }
+}
+ab_pairs <- data.frame(A, B, cardinality); ab_pairs
+
+
+
+
+
+```
+
+```{r}
+# using f to get a "root" for a specified AC (where AC hits 0.95)
+a<-1
+b<-8
+prod(a:b)^(1/b-a+1) # get lambda_max
+f <- function(lambda) {
+ # for ACs 0-0 to 0-7
+ return(ppois(8, lambda) - ppois(0, lambda) - 0.95)
+
+  # for ACs 1-8 and on
+  # return((ppois(23, lambda) - ppois(7, lambda)) - 0.95)
+}
+uniroot(f, c(3.764351 ,16)) # for downward parabolas, just start searching after AC's own max
+
+```
+
+```{r ACs}
+plot(y = ppois(0, seq(0,0.05129, by = 0.0001)), x = seq(0,0.05129, by = 0.0001), # AC 0-0
+               type = "l", xlim = c(0,16),
+     xlab = expression(lambda),
+     ylab = "Coverage Probability",
+     main = expression("Poisson("~lambda~")"))
+lines(y = ppois(1, seq(0.05129, 0.35537, by = 0.0001)),  # AC 0-1
+      x = seq(0.05129, 0.35537, by = 0.0001), type = "l")
+lines(y = ppois(2, seq(0.35537, 0.81767,  by = 0.0001)), # AC 0-2
+      x = seq(0.35537, 0.81767, by = 0.0001), type = "l")
+lines(y = ppois(3, seq(0.81767, 1.36631,  by = 0.0001)), # AC 0-3
+      x = seq(0.81767, 1.36631, by = 0.0001), type = "l") 
+lines(y = ppois(4, seq(1.36631, 1.97011,  by = 0.0001)), # AC 0-4
+      x = seq(1.36631, 1.97011, by = 0.0001), type = "l") 
+lines(y = ppois(5, seq(1.97011, 2.61301,  by = 0.0001)), # AC 0-5
+      x = seq(1.97011, 2.61301, by = 0.0001), type = "l") 
+lines(y = ppois(6, seq(2.61301, 3.28532,  by = 0.0001)), # AC 0-6
+      x = seq(2.61301, 3.28532, by = 0.0001), type = "l") 
+lines(y = ppois(7, seq(3.28532, 3.98080,  by = 0.0001)), # AC 0-7
+      x = seq(3.28532, 3.98080, by = 0.0001), type = "l") 
+lines(y = (ppois(8, seq(3.28532, 4.46013,  by = 0.0001)) -
+                  ppois(0, seq(3.28532, 4.46013,  by = 0.0001))), # AC 1-8
+      x = seq(3.28532, 4.46013, by = 0.0001), type = "l") 
+lines(y = (ppois(9, seq(4.46013, 5.32332,  by = 0.0001)) -
+                  ppois(0, seq(4.46013, 5.32332,  by = 0.0001))), # AC 1-9
+      x = seq(4.46013, 5.32332, by = 0.0001), type = "l") 
+lines(y = (ppois(10, seq(5.32332, 6.12056,  by = 0.0001)) -
+                  ppois(0, seq(5.32332, 6.12056,  by = 0.0001))), # AC 1-10
+      x = seq(5.32332, 6.12056, by = 0.0001), type = "l") 
+lines(y = (ppois(11, seq(5.32332, 6.685776,  by = 0.0001)) -
+                  ppois(1, seq(5.32332, 6.685776,  by = 0.0001))), # AC 2-11
+      x = seq(5.32332, 6.685776, by = 0.0001), type = "l")
+lines(y = (ppois(12, seq(6.685776, 7.578746,  by = 0.0001)) -
+                  ppois(1, seq(6.685776, 7.578746,  by = 0.0001))), # AC 2-12
+      x = seq(6.685776, 7.578746, by = 0.0001), type = "l")
+lines(y = (ppois(13, seq(6.685776, 8.10203,  by = 0.0001)) -
+                  ppois(2, seq(6.685776, 8.10203,  by = 0.0001))), # AC 3-13
+      x = seq(6.685776, 8.10203, by = 0.0001), type = "l")
+lines(y = (ppois(14, seq(8.10203, 9.08138,  by = 0.0001)) -
+                  ppois(2, seq(8.102034, 9.08138,  by = 0.0001))), # AC 3-14
+      x = seq(8.10203,9.08138, by = 0.0001), type = "l")
+lines(y = (ppois(15, seq(8.10203, 9.598435,  by = 0.0001)) -
+                  ppois(3, seq(8.102034, 9.598435,  by = 0.0001))), # AC 4-15
+      x = seq(8.10203, 9.598435, by = 0.0001), type = "l")
+lines(y = (ppois(16, seq(9.598435, 10.63165,  by = 0.0001)) -
+                  ppois(3, seq(9.598435, 10.63165,  by = 0.0001))), # AC 4-16
+      x = seq(9.598435, 10.63165, by = 0.0001), type = "l")
+lines(y = (ppois(17, seq(9.598435, 11.17716,  by = 0.0001)) -
+                  ppois(4, seq(9.598435, 11.17716,  by = 0.0001))), # AC 5-17
+      x = seq(9.598435, 11.17716, by = 0.0001), type = "l")
+lines(y = (ppois(18, seq(11.17716, 12.22559,  by = 0.0001)) -
+                  ppois(4, seq(11.17716, 12.22559,  by = 0.0001))), # AC 5-18
+      x = seq(11.17716, 12.22559, by = 0.0001), type = "l")
+lines(y = (ppois(19, seq(11.17716, 12.81741,  by = 0.0001)) -
+                  ppois(5, seq(11.17716, 12.81741,  by = 0.0001))), # AC 6-19
+      x = seq(11.17716, 12.81741, by = 0.0001), type = "l")
+lines(y = (ppois(20, seq(12.81741, 13.85552,  by = 0.0001)) -
+                  ppois(5, seq(12.81741, 13.85552,  by = 0.0001))), # AC 6-20
+      x = seq(12.81741, 13.85552, by = 0.0001), type = "l")
+lines(y = (ppois(21, seq(12.81741, 14.49582,  by = 0.0001)) -
+                  ppois(6, seq(12.81741, 14.49582,  by = 0.0001))), # AC 7-21
+      x = seq(12.81741, 14.49582, by = 0.0001), type = "l")
+lines(y = (ppois(22, seq(13.85552, 14.92057,  by = 0.0001)) -
+                  ppois(7, seq(13.85552, 14.92057,  by = 0.0001))), # AC 8-22
+      x = seq(13.85552, 14.92057, by = 0.0001), type = "l")
+lines(y = (ppois(23, seq(14.92057, 15,  by = 0.0001)) -
+                  ppois(7, seq(14.92057, 15,  by = 0.0001))), # AC 8-23
+      x = seq(14.92057, 15, by = 0.0001), type = "l")
+
+
+```
+
+How I'd do this process if i didn't have the graph
+
+-   start at 0-0, see where it goes below confidence level. Exhaust all other cardinality = 1 options (1-1, 2-2, 3-3, etc.). Plot each AC 0-0 until it hits the confidence level. Can find which 𝜃 results in 0-0 hitting 1-alpha by using the uniroot function
+
+-   increase cardinality by 1, so looking at 0-1, 1-2, 2-3, to see what's above conf.level
+
+    -   only 0-1 is above conf.level, so increase cardinality by 1 again. Plot AC 0-1 until it hits confidence level
+
+-   at cardinality 3 now so look at 0-2, 1-3, 2-4, and on to see what's above conf.level. Similar as before, only one AC (0-2) is above the confidence level
+
+    -   Plot AC 0-2 until it hits confidence level.
+
+Later on you might see that there are multiple ACs above confidence level at the same cardinality. Plot each from the end of the last curve that had the previous cardinality. For example: AC 1-8 (cardinality = 8) "starts" getting plotted at where AC 0-6 ends (cardinality = 7). Keep repeating this process until you graph ACs across the desired range of thetas/lambdas.
