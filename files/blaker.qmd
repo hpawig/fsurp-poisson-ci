@@ -23,5 +23,24 @@ library(tidyverse)
     -   observed $x \in A_\theta$ if $P(X \in A_\theta) > \alpha$. Record $\theta$
 
 ```{r}
+blaker_CI <- function(x, K, conf.level = 0.95) {
+  # set up
+  x0 <- x
+  alpha <- 1-conf.level
+  lambda <- seq(0,K, 0.001)
+  
+  
+  for (i in 1:length(lambda)) {
+      obs_mtp <- min(ppois(x0, lambda), ppois(x0-1, lambda, lower.tail = F))
+      
+  }
+  # compute min tail probability of observed x (mtp)
+  # for fixed lambda
+  
+  obs_mtp <- min(ppois(x, lambda), ppois(x-1, lambda, lower.tail = F))
+  print(obs_mtp)
+}
+
+blaker_CI(x = 22, lambda = K)
 
 ```
