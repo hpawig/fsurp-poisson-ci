@@ -4,3 +4,24 @@ author: "Hannah Pawig"
 format: html
 editor: visual
 ---
+
+```{r load}
+#| message: false
+#| echo: false
+
+library(tidyverse)
+```
+
+# main function
+
+-   Blaker's method involves:
+
+    -   find min tail probability (MTP) of observed x
+
+    -   Fix theta; for all x, find MTPs that are as small or smaller than observed MTP and put those x's in $A_\theta$
+
+    -   observed $x \in A_\theta$ if $P(X \in A_\theta) > \alpha$. Record $\theta$
+
+```{r}
+
+```
