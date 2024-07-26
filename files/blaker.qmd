@@ -1,0 +1,6 @@
+---
+title: "Blaker's method"
+author: "Hannah Pawig"
+format: html
+editor: visual
+---
