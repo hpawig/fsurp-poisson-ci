@@ -1,5 +1,5 @@
 ---
-title: "Modified Stern (MST) Function"
+title: "Modified Stern (MST) Function Draft"
 author: "Hannah Pawig"
 format: html
 editor: visual
