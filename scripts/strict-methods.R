@@ -88,7 +88,7 @@ test_coverage <- function(a,b, conf.level) {
 
 # K = largest number of x to create a CI for.
 # this function returns a data frame of all CIs for x = 0 to x = K
-OC <- function(K, conf.level = 0.95) {
+OC <- function(K, conf.level = 0.95, digits = 3) {
   x <- c(0:K)
   
   # initialize necessary vectors
@@ -147,8 +147,8 @@ OC <- function(K, conf.level = 0.95) {
     }
     
   }
-  lower <- lower[1:(K+1)]
-  upper <- upper[1:(K+1)]
+  lower <- round(lower[1:(K+1)], digits) # digits = desired # of decimal places
+  upper <- round(upper[1:(K+1)], digits)
   x <- x[1:(K+1)] # ensuring all vectors are equal in length. 
   # b/c extra lower endpoints will be cut off
   

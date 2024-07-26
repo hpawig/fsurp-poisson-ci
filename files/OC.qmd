@@ -62,7 +62,7 @@ test_coverage <- function(A,B, conf.level) {
 
 ```{r}
 # K = largest number of x to create a CI for.
-OC <- function(K, conf.level = 0.95) {
+OC <- function(K, conf.level = 0.95, digits = 3) {
   x <- c(0:K)
 
   # initialize necessary vectors
@@ -126,7 +126,7 @@ OC <- function(K, conf.level = 0.95) {
   x <- x[1:(K+1)] # ensuring all vectors are equal in length. 
                           # b/c extra lower endpoints will be cut off
                           
-  return(data.frame(x, lower, upper))
+  return(data.frame(x, round(lower, digits), round(upper, digits)))
 }
 ```
 

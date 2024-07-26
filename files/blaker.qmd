@@ -43,9 +43,9 @@ get_mtp <- function(x, lambda) {
 ```{r}
 blaker_CI <- function(x, conf.level = 0.95, digits = 3) {
   # set up
-  x0 <- seq(from = 0, to = x*10, by = 1)
+  x0 <- seq(from = 0, to = x*5, by = 1)
   alpha <- 1 - conf.level
-  lambda <- seq(0, x*10, 1*10^(-digits))
+  lambda <- seq(0, x*5, 1*10^(-digits))
   AS <- c() # initialize acceptance set vec
   p_lambda <- c() # will be used to store all lambda s.t. x in AS_lambda (*plausible* lambdas)
   
@@ -89,7 +89,6 @@ blaker_CI <- function(x, conf.level = 0.95, digits = 3) {
 ### testing
 
 ```{r}
-blaker_CI(x=13, d=3)
+blaker_CI(x=10,digits=2)
 
-blaker_CI(x=15, d=3)
 ```
