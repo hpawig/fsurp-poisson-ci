@@ -89,6 +89,6 @@ blaker_CI <- function(x, conf.level = 0.95, digits = 3) {
 ### testing
 
 ```{r}
-blaker_CI(x=10,digits=2)
+blaker_CI(x=8,digits=2)
 
 ```

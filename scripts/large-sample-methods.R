@@ -99,3 +99,4 @@ wilksLR_CI <- function(x, conf.level = 0.95) {
   }
   return(data.frame(lwr,uppr))
 }
+
