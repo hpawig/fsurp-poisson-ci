@@ -33,8 +33,6 @@ AC_max_coords <- function(a,b) {
 
 ```
 
-## 
-
 ## test coverage function
 
 ```{r}
@@ -57,8 +55,7 @@ test_coverage <- function(A,B, conf.level) {
 }
 ```
 
-\
-\
+## main function
 
 ```{r}
 # K = largest number of x to create a CI for.
@@ -125,8 +122,10 @@ OC <- function(K, conf.level = 0.95, digits = 3) {
   upper <- upper[1:(K+1)]
   x <- x[1:(K+1)] # ensuring all vectors are equal in length. 
                           # b/c extra lower endpoints will be cut off
+  lower <- round(lower, digits)
+  upper <- round(upper, digits)
                           
-  return(data.frame(x, round(lower, digits), round(upper, digits)))
+  return(data.frame(x, lower, upper))
 }
 ```
 
