@@ -42,31 +42,31 @@ library(tidyverse)
 #     )
 # )
 
-ui <- page_fluid(
-  titlePanel("Poisson Confidence Interval Generator"),
-  layout_columns(
-    card(
-      card_header("Select a Confidence Procedure"),
-      selectInput(
-        "select",
-        "Select option",
-        choices = list("Wald" = 1, "Rao's Score" = 2, "Wilks' Likelihood Ratio" = 3, 
-                       "Clopper-Pearson" = 4, "Modified Stern/Optimal Coverage" = 5),
-        selected = 1
-      )
-    ),
-    card(
-      card_header("Confidence Level %:"),
-      sliderInput(
-        inputId = "conf_level",
-        label = "Set value",
-        min = 80,
-        max = 99,
-        value = 95
-      )
-    )
-  )
-)
+# ui <- page_fluid(
+#   titlePanel("Poisson Confidence Interval Generator"),
+#   layout_columns(
+#     card(
+#       card_header("Select a Confidence Procedure"),
+#       selectInput(
+#         "select",
+#         "Select option",
+#         choices = list("Wald" = 1, "Rao's Score" = 2, "Wilks' Likelihood Ratio" = 3, 
+#                        "Clopper-Pearson" = 4, "Modified Stern/Optimal Coverage" = 5),
+#         selected = 1
+#       )
+#     ),
+#     card(
+#       card_header("Confidence Level %:"),
+#       sliderInput(
+#         inputId = "conf_level",
+#         label = "Set value",
+#         min = 80,
+#         max = 99,
+#         value = 95
+#       )
+#     )
+#   )
+# )
 
 
 ui <- page_sidebar(
@@ -112,25 +112,25 @@ ui <- page_sidebar(
 
 
 # Define server logic required to draw a histogram
-server <- function(input, output) {
-  temp <- ""
-  case_when(
-    (input$method == "Wald") ~ temp <- "W",
-    (input$method == "Rao's Score") ~ temp <- "S",
-    (input$method == "Wilks' Likelihood Ratio") ~ temp <- "LR",
-    (input$method == "Clopper-Pearson") ~ temp <- "CP",
-    (input$method == "Modified Stern/Optimal Coverage") ~ temp <- "OC"
-  )
+ server <- function(input, output) {
+#   temp <- ""
+#   case_when(
+#     (input$method == "Wald") ~ temp <- "W",
+#     (input$method == "Rao's Score") ~ temp <- "S",
+#     (input$method == "Wilks' Likelihood Ratio") ~ temp <- "LR",
+#     (input$method == "Clopper-Pearson") ~ temp <- "CP",
+#     (input$method == "Modified Stern/Optimal Coverage") ~ temp <- "OC"
+#   )
   
   # output table of confidence intervals
-  # 
+  
   
   
   # CPF graph
     output$CPF <- renderPlot({
       
     })
-}
 
+}
 # Run the application 
 shinyApp(ui = ui, server = server)
