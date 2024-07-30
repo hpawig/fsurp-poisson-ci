@@ -4,10 +4,11 @@
 
 
 ##--------------------------------------------------------------##
-##                        loading packages                      ##
+##             loading packages & R scripts                     ##
 ##--------------------------------------------------------------##
 
 library(tidyverse)
+
 
 ##-------------------------------------------------------------##
 ##                 Clopper-Pearson for Poisson                 ##
@@ -16,7 +17,7 @@ library(tidyverse)
 
 # returns only 1 confidence interval for inputted x
 
-clopperPearson_CI <- function(x, conf.level = 0.95) {
+clopperPearson_CI <- function(x, conf.level) {
   x <- sum(x)
   alpha <- 1-conf.level
   
@@ -86,10 +87,14 @@ test_coverage <- function(a,b, conf.level) {
 ##               Modified Stern/Optimal Coverage               ##
 ##-------------------------------------------------------------##
 
-# K = largest number of x to create a CI for.
+
 # this function returns a data frame of all CIs for x = 0 to x = K
-OC <- function(K, conf.level = 0.95, digits = 3) {
+# K = "largest number of x to create a CI for"
+# all = TRUE: means create CIs for 0 to K.
+
+OC <- function(K, conf.level, all = FALSE) {
   x <- c(0:K)
+  conf.level <- conf.level/100 #input is a whole number
   
   # initialize necessary vectors
   lower <- c()
@@ -147,12 +152,20 @@ OC <- function(K, conf.level = 0.95, digits = 3) {
     }
     
   }
-  lower <- round(lower[1:(K+1)], digits) # digits = desired # of decimal places
-  upper <- round(upper[1:(K+1)], digits)
+  lower <- lower[1:(K+1)]
+  upper <- upper[1:(K+1)]
   x <- x[1:(K+1)] # ensuring all vectors are equal in length. 
   # b/c extra lower endpoints will be cut off
+
+
   
-  return(data.frame(x, lower, upper))
+  CIs <- data.frame(x, lower, upper)
+  if (all == FALSE) {
+    CIs <- CIs |> 
+      filter(x == K)
+  }
+  
+  return(CIs)
 }
 
 
