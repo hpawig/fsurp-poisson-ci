@@ -1,72 +1,24 @@
-#
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    https://shiny.posit.co/
-#
-
+#################################################################
+##                             App                             ##
+#################################################################
 library(shiny)
 library(bslib)
 library(tidyverse)
 
-# Define UI for application that draws a histogram
-# ui <- fluidPage(
-# 
-#     # Application title
-#     titlePanel("Poisson Confidence Interval Generator"),
-# 
-#     # Sidebar with a slider input for number of bins
-#     sidebarLayout(
-#         sidebarPanel(
-#             sliderInput(inputId = "conf.level",
-#                         label = "Confidence Level (%)",
-#                         min = 80,
-#                         max = 100,
-#                         value = 95),
-#             selectInput(inputId = "method",
-#                         label = "Choose a confidence procedure:",
-#                         choices = list("Wald" = 1, "Rao's Score" = 2,
-#                                        "Wilks' Likelihood Ratio" = 3,
-#                                        "Clopper-Pearson" = 4,
-#                                        "Modified Stern/Optimal Coverage" = 5),
-#                         )
-#         ),
-# 
-# 
-#         # Show a plot of the generated distribution
-#         mainPanel(
-#            plotOutput("distPlot")
-#         )
-#     )
-# )
 
-# ui <- page_fluid(
-#   titlePanel("Poisson Confidence Interval Generator"),
-#   layout_columns(
-#     card(
-#       card_header("Select a Confidence Procedure"),
-#       selectInput(
-#         "select",
-#         "Select option",
-#         choices = list("Wald" = 1, "Rao's Score" = 2, "Wilks' Likelihood Ratio" = 3, 
-#                        "Clopper-Pearson" = 4, "Modified Stern/Optimal Coverage" = 5),
-#         selected = 1
-#       )
-#     ),
-#     card(
-#       card_header("Confidence Level %:"),
-#       sliderInput(
-#         inputId = "conf_level",
-#         label = "Set value",
-#         min = 80,
-#         max = 99,
-#         value = 95
-#       )
-#     )
-#   )
-# )
+
+
+
+# Large Sample Procedures (W, RS, Wilks LR)
+source(file = here::here("app files",
+                         "large-sample-methods.R"), encoding = "UTF-8")
+source("strict-methods.R", encoding = "UTF-8")
+
+
+
+
+# Define UI for application that takes in user's observed x and confidence level
+
 
 
 ui <- page_sidebar(
@@ -91,8 +43,18 @@ ui <- page_sidebar(
     ),
     card(
       card_header(withMathJax("Observed x")),
-      numericInput(inputId = "num", 
+      numericInput(inputId = "obs_x", 
                    label = "Enter a number", value = 1)
+    ),
+    card(
+      checkboxInput(inputId = "checkbox",
+                    label = "Display intervals up to observed x",
+                    value = FALSE), # width = NULL),
+      selectInput(
+        inputId = "digits",
+        label = "Choose up to 4 decimal places",
+        choices = list("2" = 1, "3" = 2, "4" = 3)
+      )
     )
   ),
   
@@ -100,8 +62,8 @@ ui <- page_sidebar(
   
   card(
     full_screen = TRUE,
-    card_header("Confidence Intervals go here") #,
-    #plotOutput("p")
+    card_header("Confidence Intervals go here"),
+    tableOutput(outputId = "intervals")
   ),
   card(
     card_header("CPF Graph"),
@@ -113,17 +75,17 @@ ui <- page_sidebar(
 
 # Define server logic required to draw a histogram
  server <- function(input, output) {
-#   temp <- ""
-#   case_when(
-#     (input$method == "Wald") ~ temp <- "W",
-#     (input$method == "Rao's Score") ~ temp <- "S",
-#     (input$method == "Wilks' Likelihood Ratio") ~ temp <- "LR",
-#     (input$method == "Clopper-Pearson") ~ temp <- "CP",
-#     (input$method == "Modified Stern/Optimal Coverage") ~ temp <- "OC"
-#   )
+
+  digits <- reactive({
+    as.numeric(input$digits) + 1
+    })
+
   
-  # output table of confidence intervals
-  
+  # output table of confidence interval(s)
+  output$intervals <- renderTable({
+    expr = wilksLR_CI(K = input$obs_x, conf.level = input$conf_level,
+                  all = input$checkbox) 
+  }, digits = digits)
   
   
   # CPF graph

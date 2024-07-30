@@ -70,8 +70,7 @@ rao_score_CI(50)
 ```{r}
 
 wilksLR_CI <- function(x, conf.level = 0.95) {
-  x <- sum(x) # formula is for a sum 
-  n <- length(x)
+
   t <- x # start at MLE. t represents lambda
   alpha <- 1-conf.level
   
@@ -86,7 +85,7 @@ wilksLR_CI <- function(x, conf.level = 0.95) {
         lwr <- t # sets lwr to current lambda that breaks inequality
       }
   
-    t <- t - 0.001
+    t <- t - 0.0001
   }
   
   t <- x # reset lambda at MLE
@@ -102,12 +101,12 @@ wilksLR_CI <- function(x, conf.level = 0.95) {
     
     }
     
-  t <- t + 0.001
+  t <- t + 0.0001
   }
-  return(data.frame(lwr,uppr))
+  
+  CIs <- data.frame(x,lwr,uppr)
+  return(CIs)
 }
-
-wilksLR_CI(22)
 ```
 
 ### 
