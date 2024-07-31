@@ -10,16 +10,17 @@ library(tidyverse)
 
 
 # Large Sample Procedures (W, RS, Wilks LR)
-source(file = here::here("app files",
-                         "large-sample-methods.R"), encoding = "UTF-8")
+source("large-sample-methods.R", encoding = "UTF-8")
+
+# Strict Method Procedures (Clopper-Pearson, MST/OC)
 source("strict-methods.R", encoding = "UTF-8")
 
+# Server Functions
+source("server-fns.R", encoding = "UTF-8")
 
 
 
 # Define UI for application that takes in user's observed x and confidence level
-
-
 
 ui <- page_sidebar(
   title = "Poisson Confidence Interval Generator",
@@ -29,7 +30,8 @@ ui <- page_sidebar(
       inputId = "method",
       label = "Select a Confidence Procedure",
       choices = list("Wald" = 1, "Rao's Score" = 2, "Wilks' Likelihood Ratio" = 3, 
-                     "Clopper-Pearson" = 4, "Modified Stern/Optimal Coverage" = 5)
+                     "Analog to Clopper-Pearson" = 4, "Modified Stern/Optimal Coverage" = 5,
+                     "Crow & Gardner" = 6)
     ),
     card(
       card_header("Confidence Level (%)"),
@@ -62,13 +64,13 @@ ui <- page_sidebar(
   
   card(
     full_screen = TRUE,
-    card_header("Confidence Intervals go here"),
+    card_header("Confidence Interval for x"),
     tableOutput(outputId = "intervals")
-  ),
-  card(
-    card_header("CPF Graph"),
-    plotOutput("CPF")
-  )
+   ) #,
+  # card(
+  #   card_header("CPF Graph"),
+  #   plotOutput("CPF")
+  # )
 )
 
 
@@ -80,11 +82,14 @@ ui <- page_sidebar(
     as.numeric(input$digits) + 1
     })
 
+  output$ci_header <- renderText({
+    "blegh"
+  })
   
   # output table of confidence interval(s)
   output$intervals <- renderTable({
-    expr = wilksLR_CI(K = input$obs_x, conf.level = input$conf_level,
-                  all = input$checkbox) 
+    expr = find_ci(method = input$method,x = input$obs_x, 
+                   conf.level = input$conf_level, all = input$checkbox) 
   }, digits = digits)
   
   

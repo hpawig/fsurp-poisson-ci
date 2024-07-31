@@ -79,9 +79,9 @@ OC <- function(K, conf.level = 0.95, digits = 3) {
     # this creates the current curve's function so we can find its root.    
     f <- function(lambda) { 
             if (b != 0) {
-              return((ppois(b, lambda) - ppois(a-1, lambda)) - 0.95)
+              return((ppois(b, lambda) - ppois(a-1, lambda)) - conf.level)
             } else {
-              return(ppois(b, lambda) - 0.95)
+              return(ppois(b, lambda) - conf.level)
             }
         }  
        
