@@ -34,7 +34,7 @@ ui <- page_sidebar(
         label = "Select a Confidence Procedure",
         choices = list("Wald" = 1, "Rao's Score" = 2, "Wilks' Likelihood Ratio" = 3, 
                        "Analog to Clopper-Pearson" = 4, "Modified Stern/Optimal Coverage" = 5,
-                       "Crow & Gardner" = 6)
+                       "Crow & Gardner" = 6, "Blaker" = 7)
       ),
       
       # slider to choose confidence level
@@ -101,7 +101,8 @@ ui <- page_sidebar(
   # output table of confidence interval(s)
     output$intervals <- renderTable({
       expr = find_ci(method = input$method, x = input$obs_x,
-                     conf.level = input$conf_level, all = input$checkbox)
+                     conf.level = input$conf_level, all = input$checkbox,
+                     digits = input$digits)
     }, digits = digits)
     
 

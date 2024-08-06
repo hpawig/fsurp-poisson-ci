@@ -92,65 +92,96 @@ rao_score_CI <- function(x, conf.level, all = FALSE) {
 
 # returns CIs for observed x by default
 
-wilksLR_CI <- function(K, conf.level, all = FALSE) {
-  alpha <- 1 - conf.level
-  
-  lower <- c()
-  upper <- c()
 
-  x <- c(0:K)
+wilksLR_CI <- function(x, conf.level = 0.95, all = FALSE, digits = 2) {
+  diff <- 1*10^(-digits) # the amount we will increment/decrement lambda by. 
+                        # choices are 0.01, 0.001, 0.0001 controlled by user's 
+                       # desired decimal place accuracy 
+  alpha <- (1 - conf.level)
   
-  for (i in 1:length(x)) {
-    if (all == FALSE) {
-      i <- length(x)
-    }
-    
-    
-    t <- K # start at MLE. t represents lambda
-    
+  # case 1: only return 1 CI for given obs. x
+  if (all == FALSE) {
+    t <- x # start at MLE. t represents lambda
     # calculating lower limit
-    lb <- c() # initialize lower bound
-    
-    while (length(lb) == 0) {
+    lower <- c() # initialize lower bound
+    while (length(lower) == 0) {
       
-      if (x[i] == 0)  {
-        lb <- 0 
-        lower <- c(lower, lb)
-      } else if ((2*(log(dpois(x[i],lambda=x[i]))-log(dpois(x[i],lambda=t)))) <= qchisq(1-alpha, df=1)){
-        lb <- lb # keeps lower bound empty
+      if ((2*(log(dpois(x,lambda=x))-log(dpois(x,lambda=t)))) <= qchisq(1-alpha, df=1))  {
+        lower <- lower # keeps lower empty
+      } else if (x == 0) {
+        lower <- 0
       } else {
-        lb <- t # sets lower bound to current lambda that breaks inequality
-        lower <- c(lower, lb)
+        lower <- t # sets lower bound to current lambda that breaks inequality
       }
       
-      t <- t - 0.0001
+      t <- t - diff
     }
     
-    t <- x[i] # reset lambda at MLE
+    t <- x # reset lambda at MLE
     
     # calculating upper limit
     
-    ub <- c() # initialize upper (same process as lower)
-    
-    while (length(ub) == 0) {
-      if ((2*(log(dpois(x[i],lambda=x[i]))-log(dpois(x[i],lambda=t)))) <= qchisq(1-alpha, df=1)) {
-        ub <- ub
+    upper <- c() # initialize upper (same process as lower)
+    while (length(upper) == 0) {
+      if ((2*(log(dpois(x, lambda = x))-log(dpois(x, lambda = t)))) <= qchisq(1-alpha, df=1)) {
+        upper <- upper
       } else {
-        ub <- t
-        upper <- c(upper, ub)
+        upper <- t
+        
       }
       
-      t <- t + 0.0001
-
+      t <- t + diff
+    }
+    
+    
+    
+  } else {
+    
+    # same algorithm but User wants to display CIs from x = 0 to x = observed
+    
+    lower <- c()
+    upper <- c()
+    
+    x <- c(seq(0:x))
+    for (i in 1:length(x)) {
+      t_l <- x[i] # start lower bound at MLE
+      # calculating lower limit
+      lb <- c() # initialize lower bound for current x
+      while (length(lb) == 0) {
+        
+        if ((2*(log(dpois(x[i],lambda=x[i]))-log(dpois(x[i],lambda=t_l)))) <= qchisq(1-alpha, df=1))  {
+          lb <- lb # keeps lower empty
+        # } else if (x[i] == 0) {
+        #   lb <- 0
+        } else {
+          lb <- t_l # sets lower bound to current lambda that breaks inequality
+          lower <- c(lower, lb)
+        }
+        
+        t_l <- t_l - diff
+        
+      }
+      
+      
+      t_u <- x[i] # start upper bound at MLE
+      # calculating upper limit
+      
+      ub <- c() # initialize upper (same process as lower)
+      while (length(ub) == 0) {
+        if ((2*(log(dpois(x[i], lambda = x[i]))-log(dpois(x[i], lambda = t_u)))) <= qchisq(1-alpha, df=1)) {
+          ub <- ub
+        } else {
+          ub <- t_u # sets upper bound to current lambda that breaks inequality
+          upper <- c(upper, ub)
+        }
+        
+        t_u <- t_u + diff
+       
+      }
+      
     }
   }
- 
-  CIs <- data.frame(x, lower, upper)
-  if (all == FALSE) {
-    CIs <- CIs |>
-      filter(x == K)
-  }
   
+  CIs <- data.frame(x,lower,upper)
   return(CIs)
 }
-
