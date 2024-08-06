@@ -41,12 +41,19 @@ get_mtp <- function(x, lambda) {
     -   observed $x \in A_\theta$ if $P(X \in A_\theta) > \alpha$. Record $\theta$
 
 ```{r}
+# Process
+# 1) find min tail probability (MTP) of observed x
+# 2) Fix lambda; for all x, find MTPs that are as small or smaller than observed MTP at that lambda. The observed x is always among these
+# 3) observed x is in acceptance set of lambda if P(x in A_lambda) > alpha. Record all lambdas
+# 4) lower and upper confidence limits given obs.x are smallest and largest lambdas
+#   that have acceptance sets with obs. x , respectively
+
+
 blaker_CI <- function(x, conf.level = 0.95, digits = 3) {
   # set up
   x0 <- seq(from = 0, to = x*5, by = 1)
   alpha <- 1 - conf.level
   lambda <- seq(0, x*5, 1*10^(-digits))
-  AS <- c() # initialize acceptance set vec
   p_lambda <- c() # will be used to store all lambda s.t. x in AS_lambda (*plausible* lambdas)
   
   for (i in 1:length(lambda)) {
@@ -59,19 +66,23 @@ blaker_CI <- function(x, conf.level = 0.95, digits = 3) {
       for (j in 1:length(x0)) {
         temp_mtp <- get_mtp(x0[j], lambda[i]) 
         if (temp_mtp <= obs_mtp) {
-          AS <- c(AS, x0[j]) # AS will contain all x's resulting in MTP <= obs_mtp at current lambda
-          
-        # x's in acceptance sets MUST be consecutive. also x itself is obviously in its own CI?
-        # so stop calculating mtp for x0after first x0>x that has greater mtp
-        } else if ((x0[j+1] > x) && (get_mtp(x = x0[j+1], lambda[i]) > obs_mtp)) {  
-          # logic: if some x0 (that is larger than observed x) 
-          # has mtp above observed mtp then stop checking x's?
+          # AS will contain all x's resulting in MTP <= obs_mtp at current lambda
+          AS <- c(AS, x0[j]) 
+        
+        } else {  
+         # has mtp above observed mtp then stop checking more x's
           break
         }
       }
-      
+    
       # calculate probability of X being in acceptance set
-      prob <- sum(dpois(AS[1]:AS[length(AS)], lambda = lambda[i]))
+      if (0 %in% AS) {
+        prob <- ppois(max(AS), lambda[i])
+      } else if (length(AS) > 0) {
+        prob <- ppois(max(AS), lambda[i]) - ppois(min(AS), lambda[i])
+      } else {
+        prob <- 0
+      }
       
       # determine if obs x is in AS for current theta[i] by comparing to alpha
       if (prob > alpha) {
@@ -83,18 +94,4 @@ blaker_CI <- function(x, conf.level = 0.95, digits = 3) {
   upper <- max(p_lambda)
   return(data.frame(x,lower,upper))
 }
-
-
-```
-
-### testing
-
-```{r}
-for (x in 0:15) {
-  print(blaker_CI(x, digits = 2))
-}
-
-# stops working at x=8
-
-
 ```

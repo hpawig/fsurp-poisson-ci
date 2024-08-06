@@ -2,6 +2,9 @@
 ##                 Strict  Methods Script                      ##
 #################################################################
 
+# includes Minimal Cardinality Procedures
+# utilizes functions in file "preliminary-fns.R"
+source("preliminary-fns.R", encoding = "UTF-8")
 
 ##--------------------------------------------------------------##
 ##             loading packages & R scripts                     ##
@@ -43,53 +46,6 @@ clopperPearson_CI <- function(K, conf.level, all = FALSE) {
 }
 
 
-##--------------------------------------------------------------##
-##                  Acceptance Curve Functions                  ##
-##--------------------------------------------------------------##
-
-
-##----------------------------------------------------------------------------------------
-##  AC Max Coordinates function finds the (x=lambda,y=coverage probability) coordinate  --
-##                              where the AC's max occurs                               --
-##----------------------------------------------------------------------------------------
-
-AC_max_coords <- function(a,b) {
-  # using prop 2.2a formula. 
-  lambda <- prod(a:b)^(1/(b-a+1)) #prop 2.2a
-  
-  if (a == 0) {
-    max_prob <- ppois(b, lambda) # special case of calculating cdf when a is 0
-  } else {
-    max_prob <- ppois(b, lambda) - ppois(a-1, lambda) # general formula
-  }
-  
-  return(data.frame(lambda, max_prob))
-}
-
-
-##----------------------------------------------------------------
-##                    Test Coverage function                    --
-##  returns True if AC(a-b) ever rises above confidence level.  --
-##                        otherwise False                       --
-##----------------------------------------------------------------
-
-test_coverage <- function(a,b, conf.level) {
-  
-  # this is maximum prob for current cardinality curve
-  
-  max_prob <- AC_max_coords(a, b)$max_prob
-  
-  # cases to decide how to change a-b: look at if max is above conf level
-  
-  if (max_prob > conf.level) {
-    
-    return(TRUE)
-    
-  } else {
-    
-    return(FALSE)
-  }
-}
 
 
 
@@ -184,13 +140,13 @@ OC <- function(K, conf.level, all = FALSE) {
 
 
 
-##----------------------------------------------------------------
-##                        Crow & Gardner                         -
-##----------------------------------------------------------------
+##--------------------------------------------------------------##
+##                        Crow & Gardner                        ##
+##--------------------------------------------------------------##
 
 
 # K = largest number of x to create a CI for.
-# K = largest number of x to create a CI for.
+
 CG <- function(K, conf.level, all = FALSE) {
   x <- c(0:K)
   
@@ -299,7 +255,64 @@ CG <- function(K, conf.level, all = FALSE) {
 
 
 
+##################################################################
+##                    Blaker's Method (2000)                    ##
+##################################################################
 
+# Process
+# 1) find min tail probability (MTP) of observed x
+# 2) Fix lambda; for all x, find MTPs that are as small or smaller than observed MTP at that lambda. The observed x is always among these
+# 3) observed x is in acceptance set of lambda if P(x in A_lambda) > alpha. Record all lambdas
+# 4) lower and upper confidence limits given obs.x are smallest and largest lambdas
+#   that have acceptance sets with obs. x , respectively
+
+# NOTE: calculations to the 4th decimal place may take quite a while...
+
+blaker_CI <- function(x, conf.level = 0.95, digits = 3) {
+  # set up
+  x0 <- seq(from = 0, to = x*5, by = 1)
+  alpha <- 1 - conf.level
+  lambda <- seq(0, x*5, 1*10^(-digits))
+  p_lambda <- c() # will be used to store all lambda s.t. x in AS_lambda (*plausible* lambdas)
+  
+  for (i in 1:length(lambda)) {
+    AS <- c() # initialize acceptance set vec for lambda[i]
+    
+    # calculate obs mtp for current lambda
+    obs_mtp <- get_mtp(x, lambda[i])
+    
+    # find all x's with MTP <= observed mtp
+    for (j in 1:length(x0)) {
+      temp_mtp <- get_mtp(x0[j], lambda[i]) 
+      if (temp_mtp <= obs_mtp) {
+        # AS will contain all x's resulting in MTP <= obs_mtp at current lambda
+        AS <- c(AS, x0[j]) 
+        
+      } else {  
+        # has mtp above observed mtp then stop checking more x's
+        break
+      }
+    }
+    
+    # calculate probability of X being in acceptance set
+    if (0 %in% AS) {
+      prob <- ppois(max(AS), lambda[i])
+    } else if (length(AS) > 0) {
+      prob <- ppois(max(AS), lambda[i]) - ppois(min(AS), lambda[i])
+    } else {
+      prob <- 0
+    }
+    
+    # determine if obs x is in AS for current theta[i] by comparing to alpha
+    if (prob > alpha) {
+      p_lambda <- c(p_lambda, lambda[i])
+    }
+  }
+  
+  lower <- min(p_lambda)
+  upper <- max(p_lambda)
+  return(data.frame(x,lower,upper))
+}
 
 
 
