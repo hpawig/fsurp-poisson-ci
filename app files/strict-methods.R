@@ -23,7 +23,7 @@ library(tidyverse)
 
 clopperPearson_CI <- function(K, conf.level, all = FALSE) {
   x <- c(0:K)
-  alpha <- 1-(conf.level/100)
+  alpha <- 1-conf.level
   lower <- c(); upper <- c()
   
   
@@ -144,9 +144,7 @@ OC <- function(K, conf.level, all = FALSE) {
 ##                        Crow & Gardner                        ##
 ##--------------------------------------------------------------##
 
-
 # K = largest number of x to create a CI for.
-
 CG <- function(K, conf.level, all = FALSE) {
   x <- c(0:K)
   
@@ -163,7 +161,6 @@ CG <- function(K, conf.level, all = FALSE) {
   
   while (a < (K+1)) {
     
-    
     # this creates the current curve's function so we can find its root.    
     f <- function(lambda) { 
       if (b != 0) {
@@ -175,7 +172,7 @@ CG <- function(K, conf.level, all = FALSE) {
     
     
     
-    # this loop finds interval (start,end) to search for current a-b's root
+    # this loop finds interval (start,end) to search for where current a-b goes below conf.level
     start <- AC_max_coords(a, b)$lambda # start searching at current a-b's maximum lambda
     a0 <- (a+1); b0 <- (b+1)
     while (sum(dpois(a0:b0,
@@ -186,16 +183,7 @@ CG <- function(K, conf.level, all = FALSE) {
     end <- AC_max_coords(a0, b0)$lambda # end search at next a-b's maximum lambda
     
     
-    if((test_coverage(a+1, b+2, conf.level) != T)) {
-      
-      
-      # there's an "extra" +1 for indexing purposes
-      lower[(b+2)] <- uniroot(f, c(start, end))$root # lower limit for (b+1), aka new b
-      b <- b + 1
-      
-      
-    } else if ((test_coverage(a+1, b+1, conf.level) == T)) {
-      
+    if((test_coverage(a+1, b+1, conf.level) == T)) { # check AC {a+1}-{b+1} first
       a <- a + 1
       b <- b + 1
       
@@ -208,26 +196,34 @@ CG <- function(K, conf.level, all = FALSE) {
       }
       end <- AC_max_coords(a0, b0)$lambda # end search at next a-b's maximum lambda
       
-      
       # setting coincidental endpoint
       # which will be when the previous AC hits conf.level
       lower[b+1] <- uniroot(f, c(start, end))$root  # current b's lower bound
       
+      start <- AC_max_coords(a-5,b-5)$lambda   #  start search at (a-5)-(b-5) max.
+      end <- AC_max_coords(a, b)$lambda # end search at next a-b's maximum lambda
       
-      start <- AC_max_coords(a,b)$lambda            #  start search at (a-1), (b-1) max.
-      end <- AC_max_coords(a-1, b-1)$lambda         # end search at a+1, b+1 maximum.
-      upper[a] <- uniroot(f, c(start,end))$root     # a-1's upper bound. where (a+1)-(b+1) curve starts above CI
+      # a-1's upper bound aka where (a+1)-(b+1) curve starts above CI
+      upper[a] <- uniroot(f, c(start,end))$root     
       
       
-    }  else if (test_coverage(a+1, b+2, conf.level) == T) {
+      
+    } else if ((test_coverage(a+1, b+2, conf.level) == F)) { 
+      # check next AC by increasing cardinality by 1; ensure {a} non-decreasing
+      lower[(b+2)] <- uniroot(f, c(start, end))$root # lower limit for (b+1), aka new b
+      b <- b + 1   
+      
+    }  else { # if (test_coverage(a+1, b+2, conf.level) == T) {
+      
       start <- AC_max_coords(a, b)$lambda
       a0 <- a + 1; b0 <- b + 1
       end <- AC_max_coords(a0, b0)$lambda # end search at next a-b's maximum lambda
       
       # setting coincidental endpoint
       
+      # identical lower endpoint when AC {a+1}--{b+2} is above conf.level
       lower[b+3] <- uniroot(f, c(start, end))$root  # new b's lower bound
-      lower[b+2] <- lower[b+3]  # identical lower endpoint when a + 1 and b + 2 is above conf.level
+      lower[b+2] <- lower[b+3]  
       upper[a+1] <- lower[b+3]                        # old a's upper bound
       
       
@@ -246,6 +242,9 @@ CG <- function(K, conf.level, all = FALSE) {
   
   CIs <- data.frame(x,lower,upper)
   
+  # all=TRUE represents display all intervals from x=0 to x=observed/user input
+  # use filter to keep rows of the data set "CI" where x = observed (K) and discards those where x != K
+  # to get only 1 row for observed x's CI
   if (all == FALSE) {
     CIs <- CIs |> 
       filter(x == K)
@@ -254,10 +253,9 @@ CG <- function(K, conf.level, all = FALSE) {
 }
 
 
-
-##################################################################
+##--------------------------------------------------------------##
 ##                    Blaker's Method (2000)                    ##
-##################################################################
+##--------------------------------------------------------------##
 
 # Process
 # 1) find min tail probability (MTP) of observed x
@@ -268,7 +266,7 @@ CG <- function(K, conf.level, all = FALSE) {
 
 # NOTE: calculations to the 4th decimal place may take quite a while...
 
-blaker_CI <- function(x, conf.level = 0.95, digits = 3) {
+blaker_CI <- function(x, conf.level = 0.95, digits = 2) {
   # set up
   x0 <- seq(from = 0, to = x*5, by = 1)
   alpha <- 1 - conf.level
@@ -298,7 +296,7 @@ blaker_CI <- function(x, conf.level = 0.95, digits = 3) {
     if (0 %in% AS) {
       prob <- ppois(max(AS), lambda[i])
     } else if (length(AS) > 0) {
-      prob <- ppois(max(AS), lambda[i]) - ppois(min(AS), lambda[i])
+      prob <- ppois(max(AS), lambda[i]) - ppois(min(AS)-1, lambda[i])
     } else {
       prob <- 0
     }
