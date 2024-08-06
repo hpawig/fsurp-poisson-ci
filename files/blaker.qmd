@@ -49,7 +49,7 @@ get_mtp <- function(x, lambda) {
 #   that have acceptance sets with obs. x , respectively
 
 
-blaker_CI <- function(x, conf.level = 0.95, digits = 3) {
+blaker_CI <- function(x, conf.level = 0.95, digits = 2) {
   # set up
   x0 <- seq(from = 0, to = x*5, by = 1)
   alpha <- 1 - conf.level
@@ -70,7 +70,7 @@ blaker_CI <- function(x, conf.level = 0.95, digits = 3) {
           AS <- c(AS, x0[j]) 
         
         } else {  
-         # has mtp above observed mtp then stop checking more x's
+         # current x0 has mtp above observed mtp, so stop checking more x's
           break
         }
       }
@@ -79,7 +79,7 @@ blaker_CI <- function(x, conf.level = 0.95, digits = 3) {
       if (0 %in% AS) {
         prob <- ppois(max(AS), lambda[i])
       } else if (length(AS) > 0) {
-        prob <- ppois(max(AS), lambda[i]) - ppois(min(AS), lambda[i])
+        prob <- ppois(max(AS), lambda[i]) - ppois(min(AS)-1, lambda[i])
       } else {
         prob <- 0
       }
@@ -94,4 +94,60 @@ blaker_CI <- function(x, conf.level = 0.95, digits = 3) {
   upper <- max(p_lambda)
   return(data.frame(x,lower,upper))
 }
+```
+
+## CPF Graph for Blaker's method
+
+### coverage probability function for Blaker
+
+```{r}
+# creating a coverage probability function given one lambda for B method
+blaker_CP <- function(lambda, conf.level = 0.95) {
+
+    captured <- c() # initialize
+    for (x0 in 0:50) {
+      LL <- blaker_CI(x0, conf.level)$lower
+      UL <- blaker_CI(x0, conf.level)$upper
+    
+      if (dplyr::between(lambda, LL, UL) == TRUE) {
+        captured <- c(captured,x)
+      }
+    }
+    
+  # sum pmf of each x that captures lambda in its CI
+    p <- 0
+    for (i in 1:length(captured)) {
+      p <- p + dpois(captured[i], lambda)
+    }
+  
+ # this is the coverage probability for lambda
+  return(p)
+}
+
+
+```
+
+### plot
+
+```{r}
+# create data frame of all coverage probabilities for lambda 0,...,50
+lambda <- c(seq(0,50,0.25))
+coverage <- c() # initialize coverage
+for (i in (1:length(lambda))) {
+  coverage[i] <- blaker_CP(lambda = lambda[i])
+}
+coverage_table <- data.frame(lambda, coverage)
+
+# plot 
+coverage_table |> 
+  ggplot(mapping = aes(x = lambda,
+                       y = coverage)) +
+  geom_line() +
+  geom_line(y = 0.95, col = "red", linetype = "dashed") +
+  labs(x = expression(lambda),
+       y = "Coverage Probability",
+       title = "Coverage Probability for Blaker's Method",
+       subtitle = "for values of the Poisson mean parameter up to 50") +
+  annotate("text", x = 53, y = 0.95, label = "0.95", color = "red") +
+  scale_x_continuous(breaks = seq(0,50,10))
 ```
