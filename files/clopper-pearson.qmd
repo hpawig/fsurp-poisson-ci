@@ -1,8 +1,6 @@
 ---
 title: "Clopper-Pearson Method"
-format: 
-  html:
-    self-contained: true
+format: html
 editor: visual
 ---
 
@@ -72,7 +70,7 @@ lambda <- c(seq(0, 50, by = 0.05))
 
 coverage <- c()
 for (i in (1:length(lambda))) {
-  coverage[i] <- cov_prob_CloPear(lambda=lambda[i])
+  coverage[i] <- cov_prob_clopperPearson(lambda=lambda[i])
 }
 coverage_table <- data.frame(lambda, coverage)
 
