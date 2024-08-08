@@ -129,7 +129,60 @@ OC <- function(K, conf.level = 0.95, digits = 3) {
 }
 ```
 
-\
-\
-\
-\
+## graph CPF
+
+```{r}
+# creating a coverage probability function given one lambda for OC method
+cov_prob_OC <- function(lambda, conf.level=0.95) {
+
+    captured <- c() # initialize
+    for (x in 0:100) {
+      CI_temp <- OC(x, conf.level)
+    
+      if (dplyr::between(lambda, CI_temp$lower, CI_temp$upper)) {
+        captured <- c(captured,x)
+      }
+    }
+    
+  # sum pmf of each x that captures lambda in its CI
+   p <- 0
+    for (y in 1:length(captured)) {
+      p <- p + dpois(captured[y], lambda=lambda)
+
+    }
+  
+ # this is the coverage probability for lambda
+  return(p)
+}
+
+```
+
+```{r}
+# create data frame of all coverage probabilities for lambda = 0 up to lambda = 50
+lambda <- c(seq(0,50,0.05))
+coverages_OC <- c() # initialize coverage
+for (i in (1:length(lambda))) {
+  coverages_OC[i] <- cov_prob_OC(lambda=lambda[i])
+}
+coverage_table_OC <- data.frame(lambda, coverage)
+
+
+```
+
+## plot
+
+```{r}
+
+coverage_table |> 
+  ggplot(mapping = aes(x = lambda,
+                       y = coverage)) +
+  geom_line() +
+  geom_line(y = 0.95, col = "red", linetype = "dashed") +
+  labs(x = expression(lambda),
+       y = "Coverage Probability",
+       title = "Coverage Probability for Optimal Coverage Method",
+       subtitle = "for values of the Poisson mean parameter up to 50") +
+  annotate("text", x = 53, y = 0.95, label = "0.95", color = "red") +
+  scale_x_continuous(breaks = seq(0,50,10)) +
+  scale_y_continuous(limits = c(0.94,1))
+```

@@ -57,7 +57,7 @@ test_coverage <- function(A,B, conf.level) {
 }
 ```
 
-##   main function
+## main function
 
 ```{r}
 # K = largest number of x to create a CI for.
@@ -169,7 +169,7 @@ CG <- function(K, conf.level, all = FALSE) {
 }
 ```
 
-
+\
 
 ```{r}
 # code to graph a specific AC for troubleshooting
@@ -197,4 +197,57 @@ abline(h = 0.95, col = "red")
 
 # AC_max_coords(22,44)
 # AC_max_coords(23,45)
+```
+
+## graph CPF
+
+```{r}
+cov_prob_CG <- function(lambda, conf.level) {
+  
+  
+  captured <- c() # initialize
+  
+    for (x in 0:100) {
+      CI_temp <- CG(x, conf.level, all = F)
+    
+      if (dplyr::between(lambda, CI_temp$lower, CI_temp$upper)) {
+        captured <- c(captured,x)
+      }
+    }
+    
+  # sum pmf of each x that captures lambda in its CI
+   p <- 0
+    for (y in 1:length(captured)) {
+      p <- p + dpois(captured[y], lambda=lambda)
+
+    }
+  
+ # this is the coverage probability for lambda
+  return(p)
+}
+
+
+```
+
+```{r}
+lambda <- c(seq(0, 50, by = 0.05))
+coverage <- c()
+
+for (i in (1:length(lambda))) {
+  coverage[i] <- cov_prob_CG(lambda = lambda[i], conf.level = 0.95)
+}
+coverage_table <- data.frame(lambda, coverage)
+
+coverage_table |> 
+  ggplot(mapping = aes(x = lambda,
+                       y = coverage)) +
+  geom_line() +
+  geom_line(y = 0.95, col = "red", linetype = "dashed") +
+  labs(x = expression(lambda),
+       y = "Coverage Probability",
+       title = "Coverage Probability for Crow & Gardner's Method",
+       subtitle = "for values of the Poisson mean parameter up to 50") +
+  annotate("text", x = 53, y = 0.95, label = "0.95", color = "red") +
+  scale_x_continuous(breaks = seq(0,50,10)) +
+  scale_y_continuous(limits = c(0.94,1.0))
 ```
