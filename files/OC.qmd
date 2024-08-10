@@ -59,7 +59,7 @@ test_coverage <- function(A,B, conf.level) {
 
 ```{r}
 # K = largest number of x to create a CI for.
-OC <- function(K, conf.level = 0.95, digits = 3) {
+OC <- function(K, conf.level = 0.95, digits = 3, all = F) {
   x <- c(0:K)
 
   # initialize necessary vectors
@@ -124,8 +124,15 @@ OC <- function(K, conf.level = 0.95, digits = 3) {
                           # b/c extra lower endpoints will be cut off
   lower <- round(lower, digits)
   upper <- round(upper, digits)
+  
+  CIs <- data.frame(x, lower, upper)
+  
+  if (all == F) {
+    CIs <- CIs |> 
+      filter(x == K)
+  }
                           
-  return(data.frame(x, lower, upper))
+  return(CIs)
 }
 ```
 
@@ -164,7 +171,7 @@ coverages_OC <- c() # initialize coverage
 for (i in (1:length(lambda))) {
   coverages_OC[i] <- cov_prob_OC(lambda=lambda[i])
 }
-coverage_table_OC <- data.frame(lambda, coverage)
+coverage_table_OC <- data.frame(lambda, coverages_OC)
 
 
 ```
@@ -172,17 +179,29 @@ coverage_table_OC <- data.frame(lambda, coverage)
 ## plot
 
 ```{r}
-
-coverage_table |> 
-  ggplot(mapping = aes(x = lambda,
-                       y = coverage)) +
-  geom_line() +
+# plot lambda vs. coverage probability
+coverage_table_OC |> 
+  ggplot(mapping = aes(x = lambda, # specify x and y variables
+                       y = coverages_OC)) +
+  
+  # specify it is a line graph
+  geom_line() + 
+  
+  # define the confidence level line
   geom_line(y = 0.95, col = "red", linetype = "dashed") +
+  
+  # creating axis labels and plot titles
   labs(x = expression(lambda),
        y = "Coverage Probability",
        title = "Coverage Probability for Optimal Coverage Method",
        subtitle = "for values of the Poisson mean parameter up to 50") +
+  
+  # label for the confidence level line
   annotate("text", x = 53, y = 0.95, label = "0.95", color = "red") +
+  
+  # specify x-axis tick breaks
   scale_x_continuous(breaks = seq(0,50,10)) +
+  
+  # show graph from y = 0.94 to y = 1.0
   scale_y_continuous(limits = c(0.94,1))
 ```
