@@ -31,11 +31,13 @@ find_ci <- function(method, x, conf.level, all, digits) {
     ci <- CG(x, conf.level, all)
   } else if (method == "7") { # Blaker's
     ci <- blaker_CI(x, conf.level, digits)
+  } else if (method == "8") { # CMC
+    ci <- CMC_CI(x, conf.level, all)
   }
   
 
   return(ci) # ci is a data.frame of CIs from x = 0 to x = observed when all = TRUE
-             # ci is a data.cframe of 1 row for CI of observed x ONLY when all = FALSE
+             # ci is a data.frame of 1 row for CI of observed x ONLY when all = FALSE
 }
 
 

@@ -16,7 +16,7 @@ library(tidyverse)
 ##                          Wald Method                        ##
 ##-------------------------------------------------------------##
 
-# returns CIs for all x's from 0 to inputted x ("K") by default
+# returns CIs for all x's from 0 to inputted x by default
 
 wald_CI <- function(x, conf.level, all = FALSE) {
 
@@ -25,8 +25,10 @@ wald_CI <- function(x, conf.level, all = FALSE) {
   z_star <- qnorm(1-(alpha/2)) # critical value
   # we are in n = 1 case
   
-  if (all == TRUE) {
+  if (all == TRUE) { # case to display all CIs from x = 0 to x = obs.
     x <- c(0:x)
+    
+    # for each x, calculate CI using Wald CI formula
     for (i in 1:length(x)) {
       
       # calculate bounds and store in respective vectors
@@ -37,7 +39,7 @@ wald_CI <- function(x, conf.level, all = FALSE) {
       upper <- c(upper, ub)
     }
   }
-   else {
+   else { # case: only display interval for specified observed x
      lower <- x - z_star*sqrt(x)
      upper <- x + z_star*sqrt(x)
    }
@@ -55,7 +57,7 @@ wald_CI <- function(x, conf.level, all = FALSE) {
 ##--------------------------------------------------------------##
 
 # returns CIs for x = obs
-# (all == F) returns only CI for the observed (inputted) x
+# (all == F) returns only CI for the observed (inputted) x, which is default option
 
 rao_score_CI <- function(x, conf.level, all = FALSE) {
   
@@ -69,6 +71,7 @@ rao_score_CI <- function(x, conf.level, all = FALSE) {
     
     for (i in 1:length(x)) {
       # bound calculations
+      # using formula from Holladay (2019)
       lb <- (x[i] + (1/2)*z_star^2) - z_star*sqrt(x[i] + (1/4)*z_star^2)
       ub <- (x[i] + (1/2)*z_star^2) + z_star*sqrt(x[i] + (1/4)*z_star^2)
       
@@ -96,14 +99,14 @@ rao_score_CI <- function(x, conf.level, all = FALSE) {
 wilksLR_CI <- function(x, conf.level = 0.95, all = FALSE, digits = 2) {
   diff <- 1*10^(-digits) # the amount we will increment/decrement lambda by. 
                         # choices are 0.01, 0.001, 0.0001 controlled by user's 
-                       # desired decimal place accuracy 
+                       # desired decimal place accuracy (input$digits)
   alpha <- (1 - conf.level)
   
-  # case 1: only return 1 CI for given obs. x
+  # case 1: only return ONE CI for given obs. x
   if (all == FALSE) {
     t <- x # start at MLE. t represents lambda
     # calculating lower limit
-    lower <- c() # initialize lower bound
+    lower <- c() # initialize lower bound vec
     while (length(lower) == 0) {
       
       if ((2*(log(dpois(x,lambda=x))-log(dpois(x,lambda=t)))) <= qchisq(1-alpha, df=1))  {
@@ -114,14 +117,16 @@ wilksLR_CI <- function(x, conf.level = 0.95, all = FALSE, digits = 2) {
         lower <- t # sets lower bound to current lambda that breaks inequality
       }
       
-      t <- t - diff
+      t <- t - diff # decrement lambda until inequality is false. 
+                    # Only the lambdas that satisfy the inequality are part of the CI for x
     }
     
-    t <- x # reset lambda at MLE
+    t <- x # reset lambda at MLE (which is observed x)
     
-    # calculating upper limit
+    # start calculating upper limit
+    # (same process as lower)
     
-    upper <- c() # initialize upper (same process as lower)
+    upper <- c() # initialize upper bound vec (same process as lower)
     while (length(upper) == 0) {
       if ((2*(log(dpois(x, lambda = x))-log(dpois(x, lambda = t)))) <= qchisq(1-alpha, df=1)) {
         upper <- upper
@@ -137,7 +142,7 @@ wilksLR_CI <- function(x, conf.level = 0.95, all = FALSE, digits = 2) {
     
   } else {
     
-    # same algorithm but User wants to display CIs from x = 0 to x = observed
+    # same algorithm as in the above case but User wants to display CIs from x = 0 to x = observed
     
     lower <- c()
     upper <- c()
