@@ -161,75 +161,36 @@ CG <- function(K, conf.level, all = FALSE) {
   
   while (a < (K+1)) {
     
-    # this creates the current curve's function so we can find its root.    
-    f <- function(lambda) { 
-      if (b != 0) {
-        return((ppois(b, lambda) - ppois(a-1, lambda)) - conf.level)
-      } else {
-        return(ppois(b, lambda) - conf.level)
-      }
-    }  
-    
-    
-    
-    # this loop finds interval (start,end) to search for where current a-b goes below conf.level
-    start <- AC_max_coords(a, b)$lambda # start searching at current a-b's maximum lambda
-    a0 <- (a+1); b0 <- (b+1)
-    while (sum(dpois(a0:b0,
-                     AC_max_coords(a0, b0)$lambda)) >= conf.level) {
-      a0 <- a0+1 
-      b0 <- b0+1
-    } 
-    end <- AC_max_coords(a0, b0)$lambda # end search at next a-b's maximum lambda
-    
-    
     if((test_coverage(a+1, b+1, conf.level) == T)) { # check AC {a+1}-{b+1} first
+      
       a <- a + 1
-      b <- b + 1
-      
-      start <- AC_max_coords(a, b)$lambda # start searching at current a-b's maximum lambda
-      a0 <- (a+1); b0 <- (b+1)
-      while (sum(dpois(a0:b0,
-                       AC_max_coords(a0, b0)$lambda)) >= conf.level) {
-        a0 <- a0+1
-        b0 <- b0+1
-      }
-      end <- AC_max_coords(a0, b0)$lambda # end search at next a-b's maximum lambda
-      
-      # setting coincidental endpoint
-      # which will be when the previous AC hits conf.level
-      lower[b+1] <- uniroot(f, c(start, end))$root  # current b's lower bound
-      
-      start <- AC_max_coords(a-5,b-5)$lambda   #  start search at (a-5)-(b-5) max.
-      end <- AC_max_coords(a, b)$lambda # end search at next a-b's maximum lambda
-      
-      # a-1's upper bound aka where (a+1)-(b+1) curve starts above CI
-      upper[a] <- uniroot(f, c(start,end))$root     
-      
-      
-      
-    } else if ((test_coverage(a+1, b+2, conf.level) == F)) { 
-      # check next AC by increasing cardinality by 1; ensure {a} non-decreasing
-      lower[(b+2)] <- uniroot(f, c(start, end))$root # lower limit for (b+1), aka new b
       b <- b + 1   
       
-    }  else { # if (test_coverage(a+1, b+2, conf.level) == T) {
       
-      start <- AC_max_coords(a, b)$lambda
-      a0 <- a + 1; b0 <- b + 1
-      end <- AC_max_coords(a0, b0)$lambda # end search at next a-b's maximum lambda
+      # setting coincidental endpoints
+      # current b's lower bound where (a+1)-(b+1) rises above conf.level
+      lower[b+1] <- find_roots(a,b,conf.level)$root1
+      
+      # a-1's upper bound is also where (a+1)-(b+1) curve comes above CI
+      upper[a] <- lower[b+1]     
+      
+      
+      # check next AC by increasing cardinality by 1 but also ensure {a} non-decreasing       
+    } else if ((test_coverage(a+1, b+2, conf.level) == F)) { 
+      
+      lower[(b+1)+1] <- find_roots(a,b,conf.level)$root2 # lower limit for (a+1), aka new b
+      b <- b + 1   
+      
+    }  else if (test_coverage(a+1, b+2, conf.level) == T) {
       
       # setting coincidental endpoint
-      
       # identical lower endpoint when AC {a+1}--{b+2} is above conf.level
-      lower[b+3] <- uniroot(f, c(start, end))$root  # new b's lower bound
-      lower[b+2] <- lower[b+3]  
-      upper[a+1] <- lower[b+3]                        # old a's upper bound
-      
+      lower[(b+2)+1] <- find_roots((a+1),(b+2),conf.level)$root1 # b+2's lower bound
+      lower[(b+1)+1] <- lower[b+3]  # b+1's lower bound
+      upper[a+1] <- find_roots(a+1,b+2,conf.level)$root1  # a's upper bound
       
       a <- a + 1
       b <- b + 2
-      
       
     } 
   }
@@ -251,6 +212,8 @@ CG <- function(K, conf.level, all = FALSE) {
   }
   return(CIs)
 }
+
+
 
 
 ##--------------------------------------------------------------##
@@ -311,6 +274,13 @@ blaker_CI <- function(x, conf.level = 0.95, digits = 2) {
   upper <- max(p_lambda)
   return(data.frame(x,lower,upper))
 }
+
+
+
+##-------------------------------------------------------------##
+##             Conditional Minimal Cardinality (CMC)           ##
+##-------------------------------------------------------------##
+
 
 
 

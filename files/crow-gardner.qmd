@@ -77,66 +77,36 @@ CG <- function(K, conf.level, all = FALSE) {
 
    while (a < (K+1)) {
 
-    # this creates the current curve's function so we can find its root.    
-    f <- function(lambda) { 
-            if (b != 0) {
-              return((ppois(b, lambda) - ppois(a-1, lambda)) - conf.level)
-            } else {
-              return(ppois(b, lambda) - conf.level)
-            }
-        }  
-
- 
-    
-    # this loop finds interval (start,end) to search for where current a-b goes below conf.level
-     start <- AC_max_coords(a, b)$lambda # start searching at current a-b's maximum lambda
-    a0 <- (a+1); b0 <- (b+1)
-     while (sum(dpois(a0:b0,
-                      AC_max_coords(a0, b0)$lambda)) >= conf.level) {
-      a0 <- a0+1 
-      b0 <- b0+1
-      } 
-     end <- AC_max_coords(a0, b0)$lambda # end search at next a-b's maximum lambda
-      
-     
      if((test_coverage(a+1, b+1, conf.level) == T)) { # check AC {a+1}-{b+1} first
-       
-       print("case 1"); print("current a-b"); print(c(a,b))
 
+      a <- a + 1
+      b <- b + 1   
 
              
        # setting coincidental endpoints
         # current b's lower bound where (a+1)-(b+1) rises above conf.level
-        lower[b+1] <- find_roots(a,b,conf.level)$root1  
+        lower[b+1] <- find_roots(a,b,conf.level)$root1
         
          # a-1's upper bound is also where (a+1)-(b+1) curve comes above CI
           upper[a] <- lower[b+1]     
-      
-      a <- a + 1
-      b <- b + 1          
- 
-        # check next AC by increasing cardinality by 1; ensure {a} non-decreasing       
-      } else if ((test_coverage(a+1, b+2, conf.level) == F)) { 
-        print("case 2");print("current a-b")
-          print(c(a,b))
        
-        lower[(b+2)] <- uniroot(f, c(start, end))$root # lower limit for (b+1), aka new b
+ 
+        # check next AC by increasing cardinality by 1 but also ensure {a} non-decreasing       
+      } else if ((test_coverage(a+1, b+2, conf.level) == F)) { 
+
+        lower[(b+1)+1] <- find_roots(a,b,conf.level)$root2 # lower limit for (a+1), aka new b
         b <- b + 1   
 
         }  else if (test_coverage(a+1, b+2, conf.level) == T) {
-          print("case 3")
-          print("current a-b")
-          print(c(a,b))
-          # setting coincidental endpoint
 
+          # setting coincidental endpoint
           # identical lower endpoint when AC {a+1}--{b+2} is above conf.level
-          lower[(b+2)+1] <- find_roots(a,b,conf.level)$root1 # b+2's lower bound
+          lower[(b+2)+1] <- find_roots((a+1),(b+2),conf.level)$root1 # b+2's lower bound
           lower[(b+1)+1] <- lower[b+3]  # b+1's lower bound
-          upper[a] <- lower[b+3]  # a's upper bound
-          
+          upper[a+1] <- find_roots(a+1,b+2,conf.level)$root1  # a's upper bound
+
           a <- a + 1
           b <- b + 2
-
              
            } 
   }
@@ -161,7 +131,7 @@ CG <- function(K, conf.level, all = FALSE) {
 
 
 # Example
-CIs <- CG(22,0.95,T); CIs
+CIs <- CG(50,0.95,T); CIs
 ```
 
 \
@@ -194,71 +164,60 @@ abline(h = 0.95, col = "red")
 # AC_max_coords(23,45)
 ```
 
-```{r}
-# looking at 0-6
-plot(y = ppois(6, seq(0,10,0.0001)), x = seq(0,10, by = 0.0001), # AC 0-6
-               type = "l", xlim = c(0,10), ylim = c(0.90,1), col = "pink",
-     xlab = expression(lambda),
-     ylab = "Coverage Probability",
-     main = expression("Poisson("~lambda~")"))
-
-
-abline(h = 0.95, col = "red")
-abline(v = find_roots(0,5,0.95), col = "purple") # this is lower(6)
-abline(v = find_roots(7,21,0.95), col = "purple") # this is upper(6)
-
-
-find_roots(7,21,0.95)
-find_roots(1,9,0.95)
-```
-
 ## graph CPF
 
 ```{r}
-cov_prob_CG <- function(lambda, conf.level) {
+# creating a coverage probability function given one lambda for CG method
+# WARNING: takes a very long time to run! (like 3-6 hours)
+CG_CP <- function(max_lambda, conf.level = 0.95) {
+
+  lambda_vec <- seq(0, max_lambda, 0.1)
+  coverages_CG <- c() # this vector will contain all coverage probabilities for each lambda in lambda_vec
   
   
-  captured <- c() # initialize
-  
+  for (i in 1:length(lambda_vec)) {
+    captured <- c() # initialize vector that keeps x's which produce CIs that capture current lambda
+    p <- 0
     for (x in 0:100) {
-      CI_temp <- CG(x, conf.level, all = F)
+      CI_temp <- CG(x, conf.level)
     
-      if (dplyr::between(lambda, CI_temp$lower, CI_temp$upper)) {
-        captured <- c(captured,x)
+      # sum pmf of each x that captures lambda in its CI
+      if (dplyr::between(lambda_vec[i], CI_temp$lower, CI_temp$upper) == TRUE) {
+        p <- p + dpois(x, lambda = lambda_vec[i])
       }
     }
+    coverages_CG <- c(coverages_CG, p) # add coverage prob to its corresponding vector
+  }
     
-  # sum pmf of each x that captures lambda in its CI
-   p <- 0
-    for (y in 1:length(captured)) {
-      p <- p + dpois(captured[y], lambda=lambda)
 
-    }
   
  # this is the coverage probability for lambda
-  return(p)
+  return(data.frame(lambda = lambda_vec, 
+                    cov.prob = coverages_CG))
 }
 
 
+
+coverage_table_CG <- CG_CP(max_lambda = 50, conf.level = 0.95)
+write_csv(coverage_table_CG, file = here::here("data tables",
+                                               "CG table for 95% CPF.csv"))
 ```
+
+\
 
 ```{r}
-lambda <- c(seq(0, 50, by = 0.05))
-coverages_CG <- c()
-
-for (i in (1:length(lambda))) {
-  coverages_CG[i] <- cov_prob_CG(lambda = lambda[i], conf.level = 0.95)
-}
-coverage_table_CG <- data.frame(lambda, coverages_CG)
-
-
+# save coverage table CG for plotting purposes at another time
+write_csv(coverage_table_CG, file = here::here("data tables",
+                                               "CG table for 95% CPF.csv"))
 ```
+
+\
 
 ```{r}
 # plot lambda vs. coverage probability
 coverage_table_CG |> 
   ggplot(mapping = aes(x = lambda, # specify x and y variables
-                       y = coverages_CG)) +
+                       y = cov.prob)) +
   
   # specify it is a line graph
   geom_line() +
@@ -280,4 +239,7 @@ coverage_table_CG |>
   
   # show graph from y = 0.94 to y = 1.0
   scale_y_continuous(limits = c(0.94,1.0))
+
+
+
 ```
