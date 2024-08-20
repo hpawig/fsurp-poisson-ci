@@ -171,7 +171,8 @@ coverages_OC <- c() # initialize coverage
 for (i in (1:length(lambda))) {
   coverages_OC[i] <- cov_prob_OC(lambda=lambda[i])
 }
-coverage_table_OC <- data.frame(lambda, coverages_OC)
+coverage_table_OC.95 <- data.frame(lambda, 
+                                   cov.prob = coverages_OC)
 
 
 ```
@@ -182,7 +183,7 @@ coverage_table_OC <- data.frame(lambda, coverages_OC)
 # plot lambda vs. coverage probability
 coverage_table_OC |> 
   ggplot(mapping = aes(x = lambda, # specify x and y variables
-                       y = coverages_OC)) +
+                       y = cov.prob)) +
   
   # specify it is a line graph
   geom_line() + 

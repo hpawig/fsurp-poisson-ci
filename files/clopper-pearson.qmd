@@ -40,7 +40,7 @@ Coverage probability as a function of $\lambda$
 ```{r}
 # creates a function calculating coverage probability for one lambda
 
-cov_prob_clopperPearson <- function(lambda, conf.level=0.95) {
+cov_prob_clopperPearson <- function(lambda, conf.level = 0.95) {
 
     captured <- c() # initialize
     for (x in 0:100) {
@@ -66,23 +66,43 @@ cov_prob_clopperPearson <- function(lambda, conf.level=0.95) {
 ```
 
 ```{r}
-lambda <- c(seq(0, 50, by = 0.05))
+lambda <- c(seq(0, 50, by = 0.01))
 
-coverage <- c()
+coverage_CP <- c()
 for (i in (1:length(lambda))) {
-  coverage[i] <- cov_prob_clopperPearson(lambda=lambda[i])
+  coverage_CP[i] <- cov_prob_clopperPearson(lambda=lambda[i])
 }
-coverage_table <- data.frame(lambda, coverage)
+coverage_table_CP <- data.frame(lambda, cov.prob = coverage_CP)
 
-coverage_table |> 
+cpf_CP <- coverage_table_CP |> 
   ggplot(mapping = aes(x = lambda,
-                       y = coverage)) +
-  geom_line() +
+                       y = cov.prob)) +
+  geom_line(col = "#154533") +
   geom_line(y = 0.95, col = "red", linetype = "dashed") +
   labs(x = expression(lambda),
        y = "Coverage Probability",
        title = "Coverage Probability for the Clopper-Pearson Method",
        subtitle = "for values of the Poisson mean parameter up to 50") +
   annotate("text", x = 53, y = 0.95, label = "0.95", color = "red") +
-  scale_x_continuous(breaks = seq(0,50,10))
+  scale_x_continuous(breaks = seq(0,50,10)); cpf_CP
+```
+
+```{r}
+ggplot(coverage_df, aes(x = M, y = coverage_prob, group = group)) +
+  geom_line(color = "#bd8a12") +
+  geom_point(color = "#154533") +
+  labs(x = "M", y = "Coverage Probability", title = "Coverage Probability for Normal Approximation (NHG)") +
+  geom_hline(yintercept = conf_level, color = "red", linetype = "dashed") +
+  ylim(0, 1) +
+  scale_x_continuous(breaks = c(0, 10, 20, 30, 40, 50), limits = c(0, 50)) +
+  theme_minimal() +
+  theme(
+    legend.position = "none",
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.border = element_rect(color = "black", fill = NA, size = 1),
+    axis.ticks = element_line(size = 0.5),
+    axis.ticks.length = unit(2, "mm"),
+    axis.text.x = element_text(margin = margin(t = 5)),
+    axis.text.y = element_text(margin = margin(r = 5))) 
 ```
