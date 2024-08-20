@@ -59,19 +59,10 @@ test_coverage <- function(a,b, conf.level) {
 
 find_roots <- function(a, b, conf.level) {
   # getting root 1
-  # here, we are only concerned with ACs that have "root 1" which have {a} > 0
   
-if ((a >= 1) && (b < 21)) {
-  start <- AC_max_coords(a-1, b-1)$lambda
-} else if ((a >= 1) && b >= 21) {
-  start <- AC_max_coords(a-5, b-5)$lambda
-} else {
-  start <- 0
-}
 
+  start <- 0
   end <- AC_max_coords(a,b)$lambda # end root1 search where current AC's max is
-  
-  
   
    # this creates the current curve's function so we can find its root.
     f <- function(lambda) {
@@ -87,6 +78,7 @@ if ((a >= 1) && (b < 21)) {
         } else {
       root1 <- NA # we don't need an AC's "left" root if their {a} = 0.
         }
+    
   
  ## now finding root 2
 
@@ -129,13 +121,20 @@ if ((a >= 1) && (b < 21)) {
 # K: largest value of x of interest
 # CMC method function for the Poisson distribution
 
-CMC_CI <-function(K, conf.level, all = F) {
+CMC <-function(K, conf.level, all = F) {
+   if (K <= 5) {
+     obs.x <- K # temporarily store original K given by user into object obs.x
+     K <- 20 # for some reason, algorithm won't output right CIs when x = 0,...,5
+     # so temporarily will compute many intervals (up to x = 20) and then restore original K 
+   } else {
+     obs.x <- K
+   }
   
   # Determining m(a) for all a <= K+1
   # For fixed a, m(a) is the smallest b such that P(a<=X<=b)>=conf.level
   # so that AC(a,m(a)) is the core of rainbow, RB(a)
   # m(a)'s are needed b/c root1(a+1,m(a+1)) determines u(a)
-  a=0; b=0
+  a <- 0; b <- 0
   m <- c() # vector that will hold all m(a)'s to keep track of each RB core
   
   while(a <= K+1){
@@ -149,27 +148,34 @@ CMC_CI <-function(K, conf.level, all = F) {
     a <- a+1
     b <- b+1 #can start the search at m(a)+1=b+1 b/c m(a+1)>=m(a)+1
   }
+
   
   x <- 0:K # initialize vector of x values from 0 to K
   lower <- rep(NA, K+1) # initialize empty vectors for lower and upper bounds
   upper <- rep(NA, K+1)
   
   a <- 0; b <- 0
-  lower[a+1] <- 0
+  lower[a+1] <- 0 # (lower bound for x=0)
+  
   
   # run until lower(K) determined
   while(is.na(lower[K+1])){
     
     # staying on RB(a) until RB(a+1) core aka AC[(a+1)-m(a+1)] is above conf.level
     # so in this loop we increment b staying on RB(a) until next core rises above conf.level
-    # second condition logic: STOP loop once lower limit for x = K is determined
-    while((find_roots(a, b, conf.level)$root2 < find_roots(a+1, m[a+2], conf.level)$root1)
-          && !is.na(lower[K+1])) { 
-      b <- (b + 1)
+    
+    while((find_roots(a, b, conf.level)$root2 < find_roots(a+1, m[a+2], conf.level)$root1)) {
       
-      # root2 of AC(a-(b-1)) is the lower bound for b+1
-      lower[b+1] <- find_roots(a, (b-1), conf.level)$root2 
+      # in this loop, we're transitioning between ACs within a RB(a)
+      # root2 of AC[a-b] is the lower bound for b+1 
+      lower[(b+1)+1] <- find_roots(a, b, conf.level)$root2
+      b <- b + 1
+  
+      
     }
+    
+    
+    
 
     
     # when transitioning between rainbows RB(a) to RB(a+1) we move from curve AC(a,b) to core of 
@@ -181,24 +187,32 @@ CMC_CI <-function(K, conf.level, all = F) {
     b.temp <- b
     a <- a+1
     b <- m[a+1]
-    for(i in (b.temp + 1):min(b:K)) {
+    
+    for(i in ((b.temp+1):min(b:K))) {
       lower[i+1] <- find_roots(a, m[a+1], conf.level)$root1
     }
-    upper[(a-1)+1] <- find_roots(a,m[a+1],conf.level)$root1
+    upper[(a-1)+1] <- find_roots(a, m[a+1],conf.level)$root1
   }
   
   # determine upper endpoints for remaining x:get upper(x) for a <= x <= K
   # once we have lower endpoints for x up to K we can work on upper endpoints 
-  # separately. These remaining values of upper(x) are determined by upper(x)=get_roots(x+1,m(x+1))$root1 
+  # separately. 
+  # These remaining values of upper(x) are determined by upper(x)=get_roots(x+1,m(x+1))$root1 
   for(x in a:K){
-    upper[x+1] <- find_roots(x+1,m[x+2],conf.level)$root1
-  }
+    upper[x+1] <- find_roots(x,m[x+1],conf.level)$root1
 
-  CIs=data.frame(x=0:x,lower, upper)
+  }
   
-  if (all == F) {
+  K <- obs.x # restore original K...
+  
+  lower <- lower[1:(K+1)]
+  upper <- upper[1:(K+1)]
+  
+  CIs <- data.frame(x = 0:K, lower, upper)
+  
+  if (all == F) { # indicates that user only wants to output interval for x = K
     CIs <- CIs |> 
-      filter(x == K)
+      filter(x == K) # "filter" only keeps the row in df "CIs" where x = K
   }
   return(CIs)
 }
@@ -209,105 +223,83 @@ CMC_CI <-function(K, conf.level, all = F) {
 #-------------------------------------------------------------#
 ###############################################################
 
-CI = CMC_CI(K = 5,conf.level = 0.95, all = T); CI
-```
-
-```{r}
-# code to graph a specific AC for troubleshooting
-
-
-plot(y = ppois(7, seq(0,10,0.0001)), x = seq(0,10, by = 0.0001), # AC 0-7
-               type = "l", xlim = c(0,10), ylim = c(0.90,1), col = "pink",
-     xlab = expression(lambda),
-     ylab = "Coverage Probability",
-     main = expression("Poisson("~lambda~")"))
-
-# lines(y = (ppois(44, seq(30, 34, by = 0.0001)) - ppois(21, seq(30,34,0.0001))), # AC 22-44
-#       x = seq(30, 34, by = 0.0001), type = "l")
-# lines(y = (ppois(43, seq(30, 34, by = 0.0001)) - ppois(20, seq(30,34,0.0001))), # AC 21-43
-#       x = seq(30, 34, by = 0.0001), type = "l")
-
-# abline(v=3.764351, col="blue")
- abline(v = 3.980833, col = "red")
-  # abline(v = 33.33612, col = "red") 
-abline(h = 0.95, col = "red")
-
+CI = CMC(K = 65, conf.level = 0.95, all = T); CI
+# CI = CMC(K = 8, conf.level = 0.90, all = T); CI
 
 ```
 
 ```{r}
-# plot of Rainbow curves RB(0) to RB(8)
+# plot of Rainbow curves RB(0) to RB(8) [for trouble-shooting/reference]
 
-plot(y = ppois(0, seq(0,0.05129, by = 0.0001)), x = seq(0,0.05129, by = 0.0001), # AC 0-0
-               type = "l", xlim = c(0,16),
+plot(y = ppois(0, seq(0,0.05129, by = 0.0001)), x = seq(0,0.05129, by = 0.0001), # AC 0-0 (CORE)
+               type = "l", xlim = c(0,16), lwd = 2, col = "red",
      xlab = expression(lambda),
      ylab = "Coverage Probability",
      main = expression("Poisson("~lambda~")"))
-lines(y = ppois(1, seq(0.05129, 0.35537, by = 0.0001)),  # AC 0-1
-      x = seq(0.05129, 0.35537, by = 0.0001), type = "l", col = "#E41A1C")
-lines(y = ppois(2, seq(0.35537, 0.81767,  by = 0.0001)), # AC 0-2
-      x = seq(0.35537, 0.81767, by = 0.0001), type = "l", col = "#E41A1C")
-lines(y = ppois(3, seq(0.81767, 1.36631,  by = 0.0001)), # AC 0-3
-      x = seq(0.81767, 1.36631, by = 0.0001), type = "l", col = "#E41A1C") 
-lines(y = ppois(4, seq(1.36631, 1.97011,  by = 0.0001)), # AC 0-4
-      x = seq(1.36631, 1.97011, by = 0.0001), type = "l", col = "#E41A1C") 
-lines(y = ppois(5, seq(1.97011, 2.61301,  by = 0.0001)), # AC 0-5
-      x = seq(1.97011, 2.61301, by = 0.0001), type = "l", col = "#E41A1C") 
-lines(y = ppois(6, seq(2.61301, 3.28532,  by = 0.0001)), # AC 0-6
-      x = seq(2.61301, 3.28532, by = 0.0001), type = "l", col = "#E41A1C") 
-lines(y = ppois(7, seq(3.28532, 3.98080,  by = 0.0001)), # AC 0-7
-      x = seq(3.28532, 3.98080, by = 0.0001), type = "l", col = "#E41A1C") 
-lines(y = (ppois(8, seq(3.28532, 4.46013,  by = 0.0001)) -
-                  ppois(0, seq(3.28532, 4.46013,  by = 0.0001))), # AC 1-8
-      x = seq(3.28532, 4.46013, by = 0.0001), type = "l", col = "#377EB8") 
-lines(y = (ppois(9, seq(4.46013, 5.32332,  by = 0.0001)) -
-                  ppois(0, seq(4.46013, 5.32332,  by = 0.0001))), # AC 1-9
-      x = seq(4.46013, 5.32332, by = 0.0001), type = "l", col = "#377EB8") 
-lines(y = (ppois(10, seq(5.32332, 6.12056,  by = 0.0001)) -
-                  ppois(0, seq(5.32332, 6.12056,  by = 0.0001))), # AC 1-10
-      x = seq(5.32332, 6.12056, by = 0.0001), type = "l", col = "#377EB8") 
-lines(y = (ppois(11, seq(5.32332, 6.685776,  by = 0.0001)) -
-                  ppois(1, seq(5.32332, 6.685776,  by = 0.0001))), # AC 2-11
-      x = seq(5.32332, 6.685776, by = 0.0001), type = "l", col = "blue")
-lines(y = (ppois(12, seq(6.685776, 7.578746,  by = 0.0001)) -
-                  ppois(1, seq(6.685776, 7.578746,  by = 0.0001))), # AC 2-12
-      x = seq(6.685776, 7.578746, by = 0.0001), type = "l", col = "blue")
-lines(y = (ppois(13, seq(6.685776, 8.10203,  by = 0.0001)) -
-                  ppois(2, seq(6.685776, 8.10203,  by = 0.0001))), # AC 3-13
-      x = seq(6.685776, 8.10203, by = 0.0001), type = "l", col = "#4DAF4A")
-lines(y = (ppois(14, seq(8.10203, 9.08138,  by = 0.0001)) -
-                  ppois(2, seq(8.102034, 9.08138,  by = 0.0001))), # AC 3-14
-      x = seq(8.10203,9.08138, by = 0.0001), type = "l", col = "#4DAF4A")
-lines(y = (ppois(15, seq(8.10203, 9.598435,  by = 0.0001)) -
-                  ppois(3, seq(8.102034, 9.598435,  by = 0.0001))), # AC 4-15
-      x = seq(8.10203, 9.598435, by = 0.0001), type = "l", col = "#984EA3")
-lines(y = (ppois(16, seq(9.598435, 10.63165,  by = 0.0001)) -
-                  ppois(3, seq(9.598435, 10.63165,  by = 0.0001))), # AC 4-16
-      x = seq(9.598435, 10.63165, by = 0.0001), type = "l", col = "#984EA3")
-lines(y = (ppois(17, seq(9.598435, 11.17716,  by = 0.0001)) -
-                  ppois(4, seq(9.598435, 11.17716,  by = 0.0001))), # AC 5-17
-      x = seq(9.598435, 11.17716, by = 0.0001), type = "l", col = "#FF7F00")
-lines(y = (ppois(18, seq(11.17716, 12.22559,  by = 0.0001)) -
-                  ppois(4, seq(11.17716, 12.22559,  by = 0.0001))), # AC 5-18
-      x = seq(11.17716, 12.22559, by = 0.0001), type = "l", col = "#FF7F00")
-lines(y = (ppois(19, seq(11.17716, 12.81741,  by = 0.0001)) -
-                  ppois(5, seq(11.17716, 12.81741,  by = 0.0001))), # AC 6-19
-      x = seq(11.17716, 12.81741, by = 0.0001), type = "l", col = "#FFFF33")
-lines(y = (ppois(20, seq(12.81741, 13.85552,  by = 0.0001)) -
-                  ppois(5, seq(12.81741, 13.85552,  by = 0.0001))), # AC 6-20
-      x = seq(12.81741, 13.85552, by = 0.0001), type = "l", col = "#FFFF33")
-lines(y = (ppois(21, seq(12.81741, 14.49582,  by = 0.0001)) -
-                  ppois(6, seq(12.81741, 14.49582,  by = 0.0001))), # AC 7-21
-      x = seq(12.81741, 14.49582, by = 0.0001), type = "l", col = "#F781BF" )
-lines(y = (ppois(22, seq(13.85552, 14.92057,  by = 0.0001)) -
-                  ppois(7, seq(13.85552, 14.92057,  by = 0.0001))), # AC 8-22
-      x = seq(13.85552, 14.92057, by = 0.0001), type = "l", col = "#999999")
-lines(y = (ppois(23, seq(14.92057, 15,  by = 0.0001)) -
-                  ppois(7, seq(14.92057, 15,  by = 0.0001))), # AC 8-23
-      x = seq(14.92057, 15, by = 0.0001), type = "l", col = "#999999")
+lines(y = ppois(1, seq(0, 0.35537, by = 0.0001)),  # AC 0-1
+      x = seq(0, 0.35537, by = 0.0001), type = "l", col = "#E41A1C")
+lines(y = ppois(2, seq(0, 0.81767,  by = 0.0001)), # AC 0-2
+      x = seq(0, 0.81767, by = 0.0001), type = "l", col = "#E41A1C")
+lines(y = ppois(3, seq(0, 1.36631,  by = 0.0001)), # AC 0-3
+      x = seq(0, 1.36631, by = 0.0001), type = "l", col = "#E41A1C") 
+lines(y = ppois(4, seq(0, 1.97011,  by = 0.0001)), # AC 0-4
+      x = seq(0, 1.97011, by = 0.0001), type = "l", col = "#E41A1C") 
+lines(y = ppois(5, seq(0, 2.61301,  by = 0.0001)), # AC 0-5
+      x = seq(0, 2.61301, by = 0.0001), type = "l", col = "#E41A1C") 
+lines(y = ppois(6, seq(0, 3.285316,  by = 0.0001)), # AC 0-6
+      x = seq(0, 3.285316, by = 0.0001), type = "l", col = "#E41A1C") 
+lines(y = (ppois(8, seq(3.09252, 4.46013,  by = 0.0001)) -
+                  ppois(0, seq(3.09252, 4.46013,  by = 0.0001))), # AC 1-8 (CORE)
+      x = seq(3.09252, 4.46013, by = 0.0001), type = "l", col = "#377EB8", lwd = 2) 
+lines(y = (ppois(9, seq(3.019105, 5.32332,  by = 0.0001)) -
+                  ppois(0, seq(3.019105, 5.32332,  by = 0.0001))), # AC 1-9
+      x = seq(3.019105, 5.32332, by = 0.0001), type = "l", col = "#377EB8") 
+lines(y = (ppois(11, seq(4.853849, 6.685776,  by = 0.0001)) -
+                  ppois(1, seq(4.853849, 6.685776,  by = 0.0001))), # AC 2-11 (CORE)
+      x = seq(4.853849, 6.685776, by = 0.0001), type = "l", col = "blue", lwd = 2)
+lines(y = (ppois(12, seq(4.777342, 7.578746,  by = 0.0001)) -
+                  ppois(1, seq(4.777342, 7.578746,  by = 0.0001))), # AC 2-12
+      x = seq(4.777342, 7.578746, by = 0.0001), type = "l", col = "blue")
+lines(y = (ppois(13, seq(6.505986, 8.10203,  by = 0.0001)) -
+                  ppois(2, seq(6.505986, 8.10203,  by = 0.0001))), # AC 3-13 (CORE)
+      x = seq(6.505986, 8.10203, by = 0.0001), type = "l", col = "#4DAF4A", lwd = 2)
+lines(y = (ppois(14, seq(6.363945, 9.08138,  by = 0.0001)) -
+                  ppois(2, seq(6.363945, 9.08138,  by = 0.0001))), # AC 3-14
+      x = seq(6.363945,9.08138, by = 0.0001), type = "l", col = "#4DAF4A")
+lines(y = (ppois(15, seq(8.031845, 9.598435,  by = 0.0001)) -
+                  ppois(3, seq(8.031845, 9.598435,  by = 0.0001))), # AC 4-15 (CORE)
+      x = seq(8.031845, 9.598435, by = 0.0001), type = "l", col = "#984EA3", lwd = 2)
+lines(y = (ppois(16, seq(7.848939, 10.63165,  by = 0.0001)) -
+                  ppois(3, seq(7.848939, 10.63165,  by = 0.0001))), # AC 4-16
+      x = seq(7.848939, 10.63165, by = 0.0001), type = "l", col = "#984EA3")
+lines(y = (ppois(17, seq(9.452737, 11.17716,  by = 0.0001)) -
+                  ppois(4, seq(9.452737, 11.17716,  by = 0.0001))), # AC 5-17 (CORE)
+      x = seq(9.452737, 11.17716, by = 0.0001), type = "l", col = "#FF7F00", lwd = 2)
+lines(y = (ppois(18, seq(9.263291, 12.22559,  by = 0.0001)) -
+                  ppois(4, seq(9.263291, 12.22559,  by = 0.0001))), # AC 5-18
+      x = seq(9.263291, 12.22559, by = 0.0001), type = "l", col = "#FF7F00")
+lines(y = (ppois(19, seq(10.79906, 12.81741,  by = 0.0001)) -
+                  ppois(5, seq(10.79906, 12.81741,  by = 0.0001))), # AC 6-19 (CORE)
+      x = seq(10.79906, 12.81741, by = 0.0001), type = "l", col = "#FFFF33", lwd = 2)
+lines(y = (ppois(20, seq(10.62593, 13.85552,  by = 0.0001)) -
+                  ppois(5, seq(10.62593, 13.85552,  by = 0.0001))), # AC 6-20
+      x = seq(10.62593, 13.85552, by = 0.0001), type = "l", col = "#FFFF33")
+lines(y = (ppois(21, seq(12.09873, 14.49582,  by = 0.0001)) -
+                  ppois(6, seq(12.09873, 14.49582,  by = 0.0001))), # AC 7-21 (CORE)
+      x = seq(12.09873, 14.49582, by = 0.0001), type = "l", col = "#F781BF" , lwd = 2)
+lines(y = (ppois(22, seq(13.76523, 14.92057,  by = 0.0001)) -
+                  ppois(7, seq(13.76523, 14.92057,  by = 0.0001))), # AC 8-22 (CORE)
+      x = seq(13.76523, 14.92057, by = 0.0001), type = "l", col = "#999999", lwd = 2)
+lines(y = (ppois(23, seq(13.3697, 15,  by = 0.0001)) -
+                  ppois(7, seq(13.3697, 15,  by = 0.0001))), # AC 8-23
+      x = seq(13.3697, 15, by = 0.0001), type = "l", col = "#999999")
 
-
-
+# checking certain endpoints... where ACs hit 0 OR when cores rise above 0.95
+abline(v = 3.09252, lty = 2) # upper for x = 0
+# abline(v = 4.460147, lty = 2, col = "#F781BF") # lower for x = 6,7,8
+# abline(v = 10.79906, lty = 2) # upper for x = 5
+# abline(v = 13.76523, lty = 2, col = "#F781BF") # upper for x = 7
+# abline(v = 12.09873, lty = 2, col = "red") # upper for x = 6
 ```
 
 ```{r}
@@ -315,26 +307,30 @@ lines(y = (ppois(23, seq(14.92057, 15,  by = 0.0001)) -
 pal <-  brewer.pal(n = 9, name = "Set1");pal
 ```
 
+\
+
 ```{r}
 # creating a coverage probability function given one lambda for CMC method
 CMC_CP_table <- function(max_lambda, conf.level = 0.95) {
 
-  lambda_vec <- seq(0, max_lambda, 0.01)
+  lambda_vec <- seq(0, max_lambda, 0.1)
   coverages_CMC <- c() # this vector will contain all coverage probabilities for each lambda in lambda_vec
   
+  CI_temp <- CMC(K = 65, conf.level, all = T)
   
   for (i in 1:length(lambda_vec)) {
     
     p <- 0
-    for (x in 0:50) {
-      CI_temp <- CMC_CI(x, conf.level)
-  
-      # sum pmf of each x that captures lambda in its CI
-      if (dplyr::between(lambda[i], CI_temp$lower, CI_temp$upper)) {
-        p <- p + dpois(x, lambda = lambda[i])
+    for (x0 in 0:65) { 
+      
+      
+      # sum pmf of each x0 that captures lambda in its CI
+      if (dplyr::between(lambda_vec[i], CI_temp$lower[x0+1], CI_temp$upper[x0+1])) {
+        # will execute if the current lambda is within bounds of CI(x)
+        p <- p + dpois(x0, lambda = lambda_vec[i])
       }
     }
-    coverages_CMC <- c(coverages_CMC, p) # add coverage prob to its corresponding vector
+    coverages_CMC[i] <- p # add coverage prob to its designated vector
   }
     
 
@@ -345,16 +341,24 @@ CMC_CP_table <- function(max_lambda, conf.level = 0.95) {
 }
 
 
+coverage_table_CMC.95 <- CMC_CP_table(max_lambda = 65, conf.level = 0.95)
 
-coverage_table_CMC.95 <- CMC_CP_table(max_lambda = 50, 0.95)
+
+```
+
+```{r}
+# save coverage table CMC (95% Confidence) for plotting purposes at another time
+write_csv(coverage_table_CMC.95, file = here::here("data tables",
+                                               "CMC table for 95% CPF V2.csv"))
 ```
 
 # CMC cpf graph
 
 ```{r}
 # plot lambda vs. coverage probability
+
 coverage_table_CMC.95 |> 
-  ggplot(mapping = aes(x = lambda, # specify x and y variables
+    ggplot(mapping = aes(x = lambda, # specify x and y variables
                        y = cov.prob)) +
   
   # specify it is a line graph
@@ -373,8 +377,26 @@ coverage_table_CMC.95 |>
   annotate("text", x = 53, y = 0.95, label = "0.95", color = "red") +
   
   # specify x-axis tick breaks
-  scale_x_continuous(breaks = seq(0,50,10)) +
+  scale_x_continuous(breaks = seq(0,50,10), limits = c(0,50)) +
   
   # show graph from y = 0.94 to y = 1.0
   scale_y_continuous(limits = c(0.94,1))
 ```
+
+## COMPARISON
+
+
+```{r}
+test.table <- data.frame(x = 0:150,
+                         lower.CMC  = CMC(150,0.95,T)$lower,
+                         upper.CMC = CMC(150,0.95,T)$upper,
+                         lower.CG = CG(150,0.95,T)$lower,
+                         upper.CG = CG(150,0.95,T)$upper); test.table
+
+test.table <- test.table |> 
+  mutate(lower.match = ifelse(lower.CMC == lower.CG, T, F),
+         upper.match = ifelse(upper.CMC == upper.CG, T, F))
+
+sum(test.table$lower.match); sum(test.table$upper.match); test.table
+```
+
