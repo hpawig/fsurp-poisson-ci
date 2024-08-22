@@ -101,9 +101,9 @@ CG <- function(K, conf.level, all = FALSE) {
 
           # setting coincidental endpoint
           # identical lower endpoint when AC {a+1}--{b+2} is above conf.level
-          lower[(b+2)+1] <- find_roots((a+1),(b+2),conf.level)$root1 # b+2's lower bound
+          lower[(b+2)+1] <- find_roots(a,b,conf.level)$root2 # b+2's lower bound
           lower[(b+1)+1] <- lower[b+3]  # b+1's lower bound
-          upper[a+1] <- find_roots(a+1,b+2,conf.level)$root1  # a's upper bound
+          upper[a+1] <- find_roots(a,b,conf.level)$root2  # a's upper bound
 
           a <- a + 1
           b <- b + 2
@@ -171,18 +171,19 @@ abline(h = 0.95, col = "red")
 # WARNING: takes a very long time to run! (like 3-6 hours)
 CG_CP <- function(max_lambda, conf.level = 0.95) {
 
-  lambda_vec <- seq(0, max_lambda, 0.1)
+  lambda_vec <- seq(0, max_lambda, 0.01)
   coverages_CG <- c() # this vector will contain all coverage probabilities for each lambda in lambda_vec
   
-  
+  CI_temp <- CG(100, conf.level,T)
   for (i in 1:length(lambda_vec)) {
     captured <- c() # initialize vector that keeps x's which produce CIs that capture current lambda
     p <- 0
+    
     for (x in 0:100) {
-      CI_temp <- CG(x, conf.level)
+      
     
       # sum pmf of each x that captures lambda in its CI
-      if (dplyr::between(lambda_vec[i], CI_temp$lower, CI_temp$upper) == TRUE) {
+      if (dplyr::between(lambda_vec[i], CI_temp$lower[x+1], CI_temp$upper[x+1]) == TRUE) {
         p <- p + dpois(x, lambda = lambda_vec[i])
       }
     }
@@ -199,8 +200,7 @@ CG_CP <- function(max_lambda, conf.level = 0.95) {
 
 
 coverage_table_CG <- CG_CP(max_lambda = 50, conf.level = 0.95)
-write_csv(coverage_table_CG, file = here::here("data tables",
-                                               "CG table for 95% CPF.csv"))
+
 ```
 
 \
