@@ -32,15 +32,10 @@ get_mtp <- function(x, lambda) {
 
 # main function
 
--   Blaker's method involves:
-
-    -   find min tail probability (MTP) of observed x
-
-    -   Fix theta; for all x, find MTPs that are as small or smaller than observed MTP and put those x's in $A_\theta$
-
-    -   observed $x \in A_\theta$ if $P(X \in A_\theta) > \alpha$. Record $\theta$
+note\*\* this one doesn't work
 
 ```{r}
+
 # Process
 # 1) find min tail probability (MTP) of observed x
 # 2) Fix lambda; for all x, find MTPs that are as small or smaller than observed MTP at that lambda. The observed x is always among these
@@ -49,139 +44,139 @@ get_mtp <- function(x, lambda) {
 #   that have acceptance sets with obs. x , respectively
 
 
-blaker_CI <- function(K, conf.level = 0.95, digits = 2, all = F) {
-  alpha <- 1 - conf.level
-  lambda_vec <- seq(0, K * 5, 1*10^(-digits)) # vector of lambdas we'll increment through
-
-  
-  if (all == T) {
-      lower <- c(); upper <- c()
-  
-  
-  for (x in 0:K) {
-    # create vector to store all lambda s.t. current x in AS_lambda_vec[i] (*plausible* lambdas)
-    p_lambda <- c() 
-      for (i in 1:length(lambda_vec)) {
-    
-        AS <- c() # initialize acceptance set vec for lambda_vec[i]
-        x0 <- x
-        
-        # calculate obs mtp for current lambda
-        obs_mtp <- get_mtp(x, lambda_vec[i])
-        
-        
-        # find all x's with MTP <= observed mtp (first round: increment x down)
-        while ((get_mtp(x0, lambda_vec[i]) <= obs_mtp) && (x0 >= 0)) {
-          # AS will contain all x's resulting in MTP <= obs_mtp at current lambda
-          AS <- c(AS, x0);
-          x0 <- x0 - 1
-        }
-        
-        x0 <- x + 1
-        # find all x's with MTP <= observed mtp (second round: increment x up)
-        # stop searching around when x0 gets considerably far from obs x.
-        # AS will contain all x's resulting in MTP <= obs_mtp at current lambda
-        while ((get_mtp(x0, lambda_vec[i]) <= obs_mtp) && x0 < x*3) { 
-          AS <- c(AS, x0)
-          x0 <- x0 + 1
-        }
-        
-        
-        # calculate probability of X being in acceptance set
-        if (0 %in% AS) {
-          prob <- ppois(max(AS), lambda_vec[i])
-        } else if (length(AS) > 0) {
-          prob <- ppois(max(AS), lambda_vec[i]) - ppois(min(AS)-1, lambda_vec[i])
-        } else {
-          prob <- 0
-        }
-        
-        
-        # determine if the user's obs x is in AS for current lambda by comparing to alpha
-        if (prob > alpha) {
-          p_lambda <- c(p_lambda, lambda_vec[i])
-        }
-      }
-    lower[x+1] <- min(p_lambda)
-    upper[x+1] <- max(p_lambda)
-    
-  }
-  
-  lower <- lower[1:(K+1)]; upper <- upper[1:(K+1)]
-  
-  x_vec <- 0:K
-  
-  CIs <- data.frame(x = x_vec,
-                    lower,
-                    upper)
-  
-  
-  # 2nd case; user only wants 1 CI
-  } else {
-    p_lambda <- c() 
-    
-    for (i in 1:length(lambda_vec)) {
-    
-        AS <- c() # initialize acceptance set vec for lambda_vec[i]
-        x <- K # x represents OBSERVED x / user-inputted x
-        x0 <- x
-        
-        # calculate obs mtp for current lambda
-        obs_mtp <- get_mtp(x, lambda_vec[i])
-        
-        
-        # find all x's with MTP <= observed mtp (first round: increment x down)
-        while ((get_mtp(x0, lambda_vec[i]) <= obs_mtp) && (x0 >= 0)) {
-          # AS will contain all x's resulting in MTP <= obs_mtp at current lambda
-          AS <- c(AS, x0);
-          x0 <- x0 - 1
-        }
-        
-        x0 <- x + 1
-        # find all x's with MTP <= observed mtp (second round: increment x up)
-        # stop searching around when x0 gets considerably far from obs x.
-        # AS will contain all x's resulting in MTP <= obs_mtp at current lambda
-        while ((get_mtp(x0, lambda_vec[i]) <= obs_mtp) && x0 < x*3) { 
-          AS <- c(AS, x0)
-          x0 <- x0 + 1
-        }
-        
-        
-        # calculate probability of X being in acceptance set
-        if (0 %in% AS) {
-          prob <- ppois(max(AS), lambda_vec[i])
-        } else if (length(AS) > 0) {
-          prob <- ppois(max(AS), lambda_vec[i]) - ppois(min(AS)-1, lambda_vec[i])
-        } else {
-          prob <- 0
-        }
-        
-        
-        # determine if the user's obs x is in AS for current lambda by comparing to alpha
-        if (prob > alpha) {
-          p_lambda <- c(p_lambda, lambda_vec[i])
-        }
-      }
-    lower <- min(p_lambda)
-    upper <- max(p_lambda)
-
-  
-  CIs <- data.frame(x,
-                    lower,
-                    upper)
-    
-    
-  }
-  
-  return(CIs)
-}
-
-
-#################################################################
-##                           Example                           ##
-#################################################################
-CI <- blaker_CI(K=20, conf.level = 0.95, all=T); CI
-CI <- blaker_CI(K=20, conf.level = 0.95, all=F); CI
+# blaker_CI <- function(K, conf.level = 0.95, digits = 2, all = F) {
+#   alpha <- 1 - conf.level
+#   lambda_vec <- seq(0, K * 5, 1*10^(-digits)) # vector of lambdas we'll increment through
+# 
+#   
+#   if (all == T) {
+#       lower <- c(); upper <- c()
+#   
+#   
+#   for (x in 0:K) {
+#     # create vector to store all lambda s.t. current x in AS_lambda_vec[i] (*plausible* lambdas)
+#     p_lambda <- c() 
+#       for (i in 1:length(lambda_vec)) {
+#     
+#         AS <- c() # initialize acceptance set vec for lambda_vec[i]
+#         x0 <- x
+#         
+#         # calculate obs mtp for current lambda
+#         obs_mtp <- get_mtp(x, lambda_vec[i])
+#         
+#         
+#         # find all x's with MTP <= observed mtp (first round: increment x down)
+#         while ((get_mtp(x0, lambda_vec[i]) <= obs_mtp) && (x0 >= 0)) {
+#           # AS will contain all x's resulting in MTP <= obs_mtp at current lambda
+#           AS <- c(AS, x0);
+#           x0 <- x0 - 1
+#         }
+#         
+#         x0 <- x + 1
+#         # find all x's with MTP <= observed mtp (second round: increment x up)
+#         # stop searching around when x0 gets considerably far from obs x.
+#         # AS will contain all x's resulting in MTP <= obs_mtp at current lambda
+#         while ((get_mtp(x0, lambda_vec[i]) <= obs_mtp) && x0 < x*5) { 
+#           AS <- c(AS, x0)
+#           x0 <- x0 + 1
+#         }
+#         
+#         
+#         # calculate probability of X being in acceptance set
+#         if (0 %in% AS) {
+#           prob <- ppois(max(AS), lambda_vec[i])
+#         } else if (length(AS) > 0) {
+#           prob <- ppois(max(AS), lambda_vec[i]) - ppois(min(AS)-1, lambda_vec[i])
+#         } else {
+#           prob <- 0
+#         }
+#         
+#         
+#         # determine if the user's obs x is in AS for current lambda by comparing to alpha
+#         if (prob > alpha) {
+#           p_lambda <- c(p_lambda, lambda_vec[i])
+#         }
+#       }
+#     lower[x+1] <- min(p_lambda)
+#     upper[x+1] <- max(p_lambda)
+#     
+#   }
+#   
+#   lower <- lower[1:(K+1)]; upper <- upper[1:(K+1)]
+#   
+#   x_vec <- 0:K
+#   
+#   CIs <- data.frame(x = x_vec,
+#                     lower,
+#                     upper)
+#   
+#   
+#   # 2nd case; user only wants 1 CI
+#   } else {
+#     p_lambda <- c() 
+#     
+#     for (i in 1:length(lambda_vec)) {
+#     
+#         AS <- c() # initialize acceptance set vec for lambda_vec[i]
+#         x <- K # x represents OBSERVED x / user-inputted x
+#         x0 <- x
+#         
+#         # calculate obs mtp for current lambda
+#         obs_mtp <- get_mtp(x, lambda_vec[i])
+#         
+#         
+#         # find all x's with MTP <= observed mtp (first round: increment x down)
+#         while ((get_mtp(x0, lambda_vec[i]) <= obs_mtp) && (x0 >= 0)) {
+#           # AS will contain all x's resulting in MTP <= obs_mtp at current lambda
+#           AS <- c(AS, x0);
+#           x0 <- x0 - 1
+#         }
+#         
+#         x0 <- x + 1
+#         # find all x's with MTP <= observed mtp (second round: increment x up)
+#         # stop searching around when x0 gets considerably far from obs x.
+#         # AS will contain all x's resulting in MTP <= obs_mtp at current lambda
+#         while ((get_mtp(x0, lambda_vec[i]) <= obs_mtp) && x0 < x*3) { 
+#           AS <- c(AS, x0)
+#           x0 <- x0 + 1
+#         }
+#         
+#         
+#         # calculate probability of X being in acceptance set
+#         if (0 %in% AS) {
+#           prob <- ppois(max(AS), lambda_vec[i])
+#         } else if (length(AS) > 0) {
+#           prob <- ppois(max(AS), lambda_vec[i]) - ppois(min(AS)-1, lambda_vec[i])
+#         } else {
+#           prob <- 0
+#         }
+#         
+#         
+#         # determine if the user's obs x is in AS for current lambda by comparing to alpha
+#         if (prob > alpha) {
+#           p_lambda <- c(p_lambda, lambda_vec[i])
+#         }
+#       }
+#     lower <- min(p_lambda)
+#     upper <- max(p_lambda)
+# 
+#   
+#   CIs <- data.frame(x,
+#                     lower,
+#                     upper)
+#     
+#     
+#   }
+#   
+#   return(CIs)
+# }
+# 
+# 
+# #################################################################
+# ##                           Example                           ##
+# #################################################################
+# CI <- blaker_CI(K=20, conf.level = 0.95, all=T); CI
+# CI <- blaker_CI(K=20, conf.level = 0.95, all=F); CI
 ```
 
 ## CPF Graph for Blaker's method
@@ -192,10 +187,10 @@ CI <- blaker_CI(K=20, conf.level = 0.95, all=F); CI
 # creating a coverage probability function given one lambda for B method
 blaker_CP <- function(max_lambda, conf.level = 0.95) {
 
-  lambda_vec <- seq(0, max_lambda, 0.01)
+  lambda_vec <- seq(0, max_lambda, 0.1)
   coverages_B <- c() # this vector will contain all coverage probabilities for each lambda in lambda_vec
   
-  CI_temp <- blaker_CI(65, conf.level, digits = 4, all = T)
+  CI_temp <- blaker_CI(65, conf.level, all = T)
   for (i in 1:length(lambda_vec)) {
     captured <- c() # initialize vector that keeps x's which produce CIs that capture current lambda
     p <- 0
@@ -206,7 +201,6 @@ blaker_CP <- function(max_lambda, conf.level = 0.95) {
         p <- p + dpois(x, lambda = lambda_vec[i])
       }
     }
-    print(p)
     coverages_B <- c(coverages_B, p) # add coverage prob to its corresponding vector
   }
     
@@ -220,6 +214,12 @@ blaker_CP <- function(max_lambda, conf.level = 0.95) {
 
 
 coverage_table_B <- blaker_CP(max_lambda = 50, 0.95)
+
+```
+
+```{r}
+write_csv(coverage_table_B, file = here::here("data tables",
+                                               "Blaker table for 95% CPF.csv"))
 ```
 
 ## plot
@@ -247,4 +247,84 @@ coverage_table_B |>
   
   # specify x-axis tick breaks
   scale_x_continuous(breaks = seq(0,50,10))
+```
+
+```{r}
+# working blaker CI code
+# K: largest value of x of interest
+
+blaker_CI <- function(K, conf.level, all = F){
+
+  #Acceptance function
+  #Computes probabiility of observing something with tail probability as small as x
+  accept.blaker.pois <- function(x, lambda) {
+    p1 <- 1
+    if(x != 0) {
+      p1 <- 1-ppois(x-1, lambda = lambda) # right tail probability of x  
+      }
+    p2 <- ppois(x, lambda = lambda) # left tail probability of x
+    
+    a1 <- p1 + ppois((qpois(p1, lambda)-1), lambda = lambda) 
+    a2 <- p2 + (1-ppois(qpois(1-p2, lambda), lambda = lambda))
+    return(min(a1,a2))
+  }
+  
+  
+  tol <- 0.0001 #decimal accuracy of ci
+  LL <- NA ;UL <- NA
+  
+  u <- 0
+  # lambda included in ci for x if above prob (accept.blaker) > alpha  
+  # First determine mu's in ci with grid of 10^3*tol, then and then narrow down to 
+  # 10^2*tol, 10*tol and finally to tol decimal place accuracy
+  while(accept.blaker.pois(x=0, lambda=u) >= (1-conf.level)){u=u+10^3*tol}; u=u-10^3*tol
+  while(accept.blaker.pois(x=0, lambda=u) >= (1-conf.level)){u=u+10^2*tol}; u=u-10^2*tol 
+  while(accept.blaker.pois(x=0, lambda=u) >= (1-conf.level)){u=u+10*tol}; u=u-10*tol 
+  while(accept.blaker.pois(x=0, lambda=u) >= (1-conf.level)){u=u+tol}
+  LL[1]=0
+  UL[1]=u
+  
+  for(x in 1:K){
+     
+    l=x
+    u=x
+    
+    # lambda included in ci for x if above prob (accept.blaker) > alpha  
+    # First determine mu's in ci with grid of 10^3*tol, then and then narrow down to 
+    # 10^2*tol, 10*tol and finally to tol decimal place accuracy
+    while((accept.blaker.pois(x=x,lambda=l) >= (1-conf.level)) && l!=0 ){l=l-10^3*tol}; l=l+10^3*tol
+    while((accept.blaker.pois(x=x, lambda=l) >= (1-conf.level)) && l!=0 ){l=l-10^2*tol}; l=l+10^2*tol
+    while((accept.blaker.pois(x=x, lambda=l) >= (1-conf.level)) && l!=0 ){l=l-10*tol}; l=l+10*tol
+    while((accept.blaker.pois(x=x,lambda=l) >= (1-conf.level)) && l!=0 ){l=l-tol}
+    
+    #initially use larger grid e.g. 10^5*tol for upper endpoints comparison to lower endpoint
+    #use especially large grid 10^7*tol and 10^6*tol for upper endpoints when k=1,2
+    # if(k<=2){
+    #   while(accept.blaker.pois(x=x, lambda=u) >= (1-conf.level)){u=u+10^7*tol}; u=u-10^7*tol
+    #   while(accept.blaker.pois(x=x, lambda=u) >= (1-conf.level)){u=u+10^6*tol}; u=u-10^6*tol
+    # }
+    while(accept.blaker.pois(x=x, lambda=u) >= (1-conf.level)){u=u+10^5*tol}; u=u-10^5*tol
+    while(accept.blaker.pois(x=x, lambda=u) >= (1-conf.level)){u=u+10^4*tol}; u=u-10^4*tol
+    while(accept.blaker.pois(x=x, lambda=u) >= (1-conf.level)){u=u+10^3*tol}; u=u-10^3*tol
+    while(accept.blaker.pois(x=x, lambda=u) >= (1-conf.level)){u=u+10^2*tol}; u=u-10^2*tol 
+    while(accept.blaker.pois(x=x, lambda=u) >= (1-conf.level)){u=u+10*tol}; u=u-10*tol 
+    while(accept.blaker.pois(x=x, lambda=u) >= (1-conf.level)){u=u+tol}
+    
+    LL[x+1]=l
+    UL[x+1]=u-tol/100000 #subtract tol/100000 so that we have half open intervals [l,u)
+    #print(x)
+    
+  } 
+
+  CIs <- data.frame(x=0:K, lower=LL, upper=UL)  
+  
+  if (all == F) {
+    CIs <- CIs |> 
+      filter(x == K)
+  }
+   
+  return(CIs)
+}
+
+
 ```
