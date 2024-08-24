@@ -16,6 +16,7 @@ library(tidyverse)
 ## Calculates C-P CI for Poisson mean parameter
 
 ```{r}
+# old version.
 clopperPearson_CI <- function(x, conf.level = 0.95) {
   x <- sum(x)
   alpha <- 1-conf.level
@@ -38,43 +39,42 @@ clopperPearson_CI <- function(x, conf.level = 0.95) {
 Coverage probability as a function of $\lambda$
 
 ```{r}
-# creates a function calculating coverage probability for one lambda
 
-cov_prob_clopperPearson <- function(lambda, conf.level = 0.95) {
+CP_covprob_table <- function(max_lambda, conf.level = 0.95) {
 
-    captured <- c() # initialize
-    for (x in 0:100) {
-      CI_temp <- clopperPearson_CI(x, conf.level)
+  lambda_vec <- seq(0, max_lambda, 0.1)
+  coverages_CMC <- c() # this vector will contain all coverage probabilities for each lambda in lambda_vec
+  
+  # using ClopperPearson.pois from strict-methods.R file in 'app files' folder
+  CI_temp <- ClopperPearson.pois(K=75, conf.level, T)
+  
+  for (i in 1:length(lambda_vec)) {
     
-      if (dplyr::between(lambda, CI_temp$lwr, CI_temp$uppr)) {
-        captured <- c(captured,x)
+    p <- 0
+    for (x0 in 0:75) { 
+      
+      # sum pmf of each x0 that captures lambda in its CI
+      if (dplyr::between(lambda_vec[i], CI_temp$lower[x0+1], CI_temp$upper[x0+1])) {
+        # will execute if the current lambda is within bounds of CI(x)
+        p <- p + dpois(x0, lambda = lambda_vec[i])
       }
     }
+    coverages_CMC[i] <- p # add coverage prob to its designated vector
+  }
     
-  # sum pmf of each x that captures lambda in its CI
-   p <- 0
-    for (y in 1:length(captured)) {
-      p <- p + dpois(captured[y], lambda=lambda)
 
-    }
   
  # this is the coverage probability for lambda
-  return(p)
+  return(data.frame(lambda = lambda_vec, 
+                    cov.prob = coverages_CMC))
 }
 
-
+coverage_table_CP.95 <- CP_covprob_table(max_lambda = 50, conf.level = 0.95)
 ```
 
 ```{r}
-lambda <- c(seq(0, 50, by = 0.01))
-
-coverage_CP <- c()
-for (i in (1:length(lambda))) {
-  coverage_CP[i] <- cov_prob_clopperPearson(lambda=lambda[i])
-}
-coverage_table_CP <- data.frame(lambda, cov.prob = coverage_CP)
-
-cpf_CP <- coverage_table_CP |> 
+#| message: false
+coverage_table_CP.95 |> 
   ggplot(mapping = aes(x = lambda,
                        y = cov.prob)) +
   geom_line(col = "#154533") +
@@ -83,26 +83,30 @@ cpf_CP <- coverage_table_CP |>
        y = "Coverage Probability",
        title = "Coverage Probability for the Clopper-Pearson Method",
        subtitle = "for values of the Poisson mean parameter up to 50") +
-  annotate("text", x = 53, y = 0.95, label = "0.95", color = "red") +
-  scale_x_continuous(breaks = seq(0,50,10)); cpf_CP
+  scale_x_continuous(
+    breaks = seq(0,50,10),
+    limits = c(0,54)) +
+  scale_y_continuous(limits = c(0.95,1))
+  theme_minimal() +
+  theme(
+        # legend.position = "none",
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_rect(color = "black", fill = NA, size = 1),
+        axis.ticks = element_line(size = 0.5),
+        axis.ticks.length = unit(2, "mm"),
+        axis.text.x = element_text(margin = margin(t = 5)),
+        axis.text.y = element_text(margin = margin(r = 5))
+  )
+
 ```
 
 ```{r}
-ggplot(coverage_df, aes(x = M, y = coverage_prob, group = group)) +
-  geom_line(color = "#bd8a12") +
-  geom_point(color = "#154533") +
-  labs(x = "M", y = "Coverage Probability", title = "Coverage Probability for Normal Approximation (NHG)") +
-  geom_hline(yintercept = conf_level, color = "red", linetype = "dashed") +
-  ylim(0, 1) +
-  scale_x_continuous(breaks = c(0, 10, 20, 30, 40, 50), limits = c(0, 50)) +
-  theme_minimal() +
-  theme(
-    legend.position = "none",
-    panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank(),
-    panel.border = element_rect(color = "black", fill = NA, size = 1),
-    axis.ticks = element_line(size = 0.5),
-    axis.ticks.length = unit(2, "mm"),
-    axis.text.x = element_text(margin = margin(t = 5)),
-    axis.text.y = element_text(margin = margin(r = 5))) 
+# save plot to images folder
+ggsave(filename = here::here("images",
+                             "coverageprob-CP.png"),
+       width = 6,
+       height = 4,
+       units = "in",
+       dpi = 400)
 ```
