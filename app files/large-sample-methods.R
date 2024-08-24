@@ -18,7 +18,7 @@ library(tidyverse)
 
 # returns CIs for all x's from 0 to inputted x by default
 
-wald_CI <- function(x, conf.level, all = FALSE) {
+Wald.pois <- function(x, conf.level, all = FALSE) {
 
   alpha <- 1 - conf.level
   lower <- c(); upper <- c() # initialize necessary vectors
@@ -59,7 +59,7 @@ wald_CI <- function(x, conf.level, all = FALSE) {
 # returns CIs for x = obs
 # (all == F) returns only CI for the observed (inputted) x, which is default option
 
-rao_score_CI <- function(x, conf.level, all = FALSE) {
+RaoScore.pois <- function(x, conf.level, all = FALSE) {
   
   alpha <- 1 - conf.level 
   z_star <- qnorm(1-(alpha/2)) # critical value
@@ -96,7 +96,7 @@ rao_score_CI <- function(x, conf.level, all = FALSE) {
 # returns CIs for observed x by default
 
 
-wilksLR_CI <- function(x, conf.level = 0.95, all = FALSE, digits = 2) {
+WilksLR.pois <- function(x, conf.level = 0.95, all = FALSE, digits = 2) {
   diff <- 1*10^(-digits) # the amount we will increment/decrement lambda by. 
                         # choices are 0.01, 0.001, 0.0001 controlled by user's 
                        # desired decimal place accuracy (input$digits)

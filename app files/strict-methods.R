@@ -4,6 +4,8 @@
 ##                       For Poisson                           ##
 #################################################################
 
+# Each Strict Method is the confidence procedure for a single Poisson
+
 
 # includes Minimal Cardinality Procedures
 # utilizes functions in file "preliminary-fns.R"
@@ -23,8 +25,9 @@ library(tidyverse)
 
 # K = observed x...
 # conf.level (%)
+# by default, function returns one (1) confidence interval for x = given K
 
-clopperPearson_CI <- function(K, conf.level, all = FALSE) {
+ClopperPearson.pois <- function(K, conf.level, all = FALSE) {
   x <- c(0:K)
   alpha <- 1-conf.level
   lower <- c(); upper <- c()
@@ -58,12 +61,13 @@ clopperPearson_CI <- function(K, conf.level, all = FALSE) {
 ##               Modified Stern/Optimal Coverage               ##
 ##-------------------------------------------------------------##
 
+# Minimal Cardinality Procedure
 
 # this function returns a data frame of all CIs for x = 0 to x = K
 # K = "largest number of x to create a CI for"
 # all = TRUE: means create CIs for 0 to K.
 
-OC <- function(K, conf.level, all = FALSE) {
+OC.pois <- function(K, conf.level, all = FALSE) {
   x <- c(0:K)
 
   
@@ -147,8 +151,10 @@ OC <- function(K, conf.level, all = FALSE) {
 ##                        Crow & Gardner                        ##
 ##--------------------------------------------------------------##
 
+# Minimal Cardinality Procedure
+
 # K = largest number of x to create a CI for.
-CG <- function(K, conf.level, all = FALSE) {
+CG.pois <- function(K, conf.level, all = FALSE) {
   x <- c(0:K)
   
   # initialize necessary vectors
@@ -230,7 +236,7 @@ CG <- function(K, conf.level, all = FALSE) {
 # 4) lower and upper confidence limits given obs.x are smallest and largest lambdas
 #   that have acceptance sets with obs. x , respectively
 
-blaker_CI <- function(K, conf.level, all = F){
+Blaker.pois <- function(K, conf.level, all = F){
   obs.x <- K
   if (K==0) {
     K <- 1
@@ -327,7 +333,7 @@ blaker_CI <- function(K, conf.level, all = F){
 # K: largest value of x of interest
 # CMC method function for the Poisson distribution
 
-CMC <-function(K, conf.level, all = F) {
+CMC.pois <-function(K, conf.level, all = F) {
   if (K <= 5) {
     obs.x <- K # temporarily store original K given by user into object obs.x
     K <- 20 # for some reason, algorithm won't output right CIs when x = 0,...,5
