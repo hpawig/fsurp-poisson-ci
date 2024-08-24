@@ -69,7 +69,7 @@ avg_lengths |>
   scale_colour_manual(name = "method", guide = "legend",
                       values =c('#154734'='#154734','#3A913F'='#3A913F',"#A4D65E"= "#A4D65E",
                                 '#5CB8B2'='#5CB8B2', '#ABCAE9'='#ABCAE9'),
-                      labels =c("CP","OC","CMC", "CG", "B") ) +
+                      labels =c("CP","OC","CG", "CMC", "B") ) +
   theme_minimal() +
   theme(
     panel.grid.major = element_blank(),
@@ -87,7 +87,7 @@ ggsave(
   width = 6,
   height = 4,
   units = "in",
-  dpi = 150, # change to dpi = 400 for better quality.
+  dpi = 250, # change to dpi = 400 for better quality.
   bg = "white"
 )
   
