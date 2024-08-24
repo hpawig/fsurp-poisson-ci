@@ -165,16 +165,12 @@ CMC <-function(K, conf.level, all = F) {
     # so in this loop we increment b staying on RB(a) until next core rises above conf.level
     
     while((find_roots(a, b, conf.level)$root2 < find_roots(a+1, m[a+2], conf.level)$root1)) {
-      
       # in this loop, we're transitioning between ACs within a RB(a)
       # root2 of AC[a-b] is the lower bound for b+1 
       lower[(b+1)+1] <- find_roots(a, b, conf.level)$root2
       b <- b + 1
-  
-      
+
     }
-    
-    
     
 
     
@@ -188,7 +184,7 @@ CMC <-function(K, conf.level, all = F) {
     a <- a+1
     b <- m[a+1]
     
-    for(i in ((b.temp+1):min(b:K))) {
+    for(i in (b.temp+1:min(b:K))) {
       lower[i+1] <- find_roots(a, m[a+1], conf.level)$root1
     }
     upper[(a-1)+1] <- find_roots(a, m[a+1],conf.level)$root1
@@ -199,8 +195,7 @@ CMC <-function(K, conf.level, all = F) {
   # separately. 
   # These remaining values of upper(x) are determined by upper(x)=get_roots(x+1,m(x+1))$root1 
   for(x in a:K){
-    upper[x+1] <- find_roots(x,m[x+1],conf.level)$root1
-
+    upper[x+1] <- find_roots(x+1,m[x+2],conf.level)$root1
   }
   
   K <- obs.x # restore original K...
@@ -223,8 +218,8 @@ CMC <-function(K, conf.level, all = F) {
 #-------------------------------------------------------------#
 ###############################################################
 
-CI = CMC(K = 65, conf.level = 0.95, all = T); CI
-# CI = CMC(K = 8, conf.level = 0.90, all = T); CI
+CI = CMC(K = 1, conf.level = 0.95, all = T); CI
+CI = CMC(K = 65, conf.level = 0.90, all = T); CI
 
 ```
 
@@ -316,13 +311,12 @@ CMC_CP_table <- function(max_lambda, conf.level = 0.95) {
   lambda_vec <- seq(0, max_lambda, 0.1)
   coverages_CMC <- c() # this vector will contain all coverage probabilities for each lambda in lambda_vec
   
-  CI_temp <- CMC(K = 65, conf.level, all = T)
+  CI_temp <- CMC(K=75, conf.level, T)
   
   for (i in 1:length(lambda_vec)) {
     
     p <- 0
-    for (x0 in 0:65) { 
-      
+    for (x0 in 0:75) { 
       
       # sum pmf of each x0 that captures lambda in its CI
       if (dplyr::between(lambda_vec[i], CI_temp$lower[x0+1], CI_temp$upper[x0+1])) {
@@ -340,10 +334,7 @@ CMC_CP_table <- function(max_lambda, conf.level = 0.95) {
                     cov.prob = coverages_CMC))
 }
 
-
-coverage_table_CMC.95 <- CMC_CP_table(max_lambda = 65, conf.level = 0.95)
-
-
+coverage_table_CMC.95 <- CMC_CP_table(max_lambda = 75, conf.level = 0.95)
 ```
 
 ```{r}
@@ -356,7 +347,6 @@ write_csv(coverage_table_CMC.95, file = here::here("data tables",
 
 ```{r}
 # plot lambda vs. coverage probability
-
 coverage_table_CMC.95 |> 
     ggplot(mapping = aes(x = lambda, # specify x and y variables
                        y = cov.prob)) +
@@ -382,21 +372,3 @@ coverage_table_CMC.95 |>
   # show graph from y = 0.94 to y = 1.0
   scale_y_continuous(limits = c(0.94,1))
 ```
-
-## COMPARISON
-
-
-```{r}
-test.table <- data.frame(x = 0:150,
-                         lower.CMC  = CMC(150,0.95,T)$lower,
-                         upper.CMC = CMC(150,0.95,T)$upper,
-                         lower.CG = CG(150,0.95,T)$lower,
-                         upper.CG = CG(150,0.95,T)$upper); test.table
-
-test.table <- test.table |> 
-  mutate(lower.match = ifelse(lower.CMC == lower.CG, T, F),
-         upper.match = ifelse(upper.CMC == upper.CG, T, F))
-
-sum(test.table$lower.match); sum(test.table$upper.match); test.table
-```
-
