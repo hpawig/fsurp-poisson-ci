@@ -34,7 +34,7 @@ ui <- page_sidebar(
         inputId = "method",
         label = "Select a Confidence Procedure",
         choices = list("Wald" = 1, "Rao's Score" = 2, "Wilks' Likelihood Ratio" = 3, 
-                       "Analog to Clopper-Pearson" = 4, "Modified Stern/Optimal Coverage" = 5,
+                       "Analog to Clopper-Pearson" = 4, "Modified Sterne/Optimal Coverage" = 5,
                        "Crow & Gardner" = 6, "Blaker" = 7, "Conditional Minimal Cardinality" = 8)
       ),
       
@@ -53,7 +53,7 @@ ui <- page_sidebar(
       card_footer(
         div(tags$small("*Note: " , 
                        tags$i("x"), " must be an integer representing the number of ",
-                       tags$i("total"), " events over time period of interest"),
+                       tags$i("total"), " observed events over the time period of interest"),
             align = "center", style = "color: red")
       )
       
@@ -104,7 +104,10 @@ ui <- page_sidebar(
     full_screen = T,
     card_header("Confidence Intervals"),
     max_height = 440,
-    tableOutput(outputId = "intervals")
+    tableOutput(outputId = "intervals"),
+    # Add a note to users who want CI for a mean
+    div(tags$small(tags$b("Want the confidence interval for mean?"),
+        "Divide the confidence limits by the sample size",tags$i("n")))
    )
 )
 
