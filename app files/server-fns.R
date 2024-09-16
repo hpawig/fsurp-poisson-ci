@@ -37,7 +37,7 @@ find_ci <- function(method, x, conf.level, all, digits) {
     
   } else if (method == "5") { # MST/OC
     ci <- OC.pois(x, conf.level, all)
-    method.str <- "Modified Stern/Optimal Coverage (2014)"
+    method.str <- "Modified Sterne/Optimal Coverage (2014)"
     
   } else if (method == "6") { # CG
     ci <- CG.pois(x, conf.level, all)

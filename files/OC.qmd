@@ -1,5 +1,5 @@
 ---
-title: "Modified Stern (MST) or Optimal Coverage (OC) Script"
+title: "Modified Sterne (MST) or Optimal Coverage (OC) Script"
 author: "Hannah Pawig"
 format: html
 editor: visual
