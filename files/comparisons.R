@@ -52,11 +52,11 @@ avg_lengths <- data.frame(K = 10:100,
 
 avg_lengths |> 
   ggplot(mapping = aes(x = K)) +
-  geom_line(mapping = aes(y = CP, color = "#154734"), lwd = 1) +  # CP
-  geom_line(mapping = aes(y = OC, color = "#3A913F"), lwd = 1) + # OC
-  geom_line(mapping = aes(y = CMC, color = "#A4D65E"), lwd = 1) + # CMC
-  geom_line(mapping = aes(y = CG, color = "#5CB8B2"), lwd = 1) + # CG
-  geom_line(mapping = aes(y = B, color = "#ABCAE9"), lwd = 1) + # Blaker
+  geom_line(mapping = aes(y = CP, color = "#154734"), lwd = 0.7) +  # CP
+  geom_line(mapping = aes(y = OC, color = "#3A913F"), lwd = 0.7) + # OC
+  geom_line(mapping = aes(y = CMC, color = "#A4D65E"), lwd = 0.7) + # CMC
+  geom_line(mapping = aes(y = CG, color = "#5CB8B2"), lwd = 0.7) + # CG
+  geom_line(mapping = aes(y = B, color = "#ABCAE9"), lwd = 0.7) + # Blaker
   scale_y_continuous(breaks = seq(0,30,5)) +
   scale_x_continuous(limits = c(10,100)) +
   labs(
