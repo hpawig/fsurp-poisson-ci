@@ -1,0 +1,12 @@
+name: Poisson_CI_Generator
+title: Poisson_CI_Generator
+username: s630ps-hpawig
+account: s630ps-hpawig
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 12731908
+bundleId: 9110398
+url: https://s630ps-hpawig.shinyapps.io/Poisson_CI_Generator/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
