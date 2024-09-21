@@ -58,7 +58,7 @@ ClopperPearson.pois <- function(K, conf.level, all = FALSE) {
 
 
 ##-------------------------------------------------------------##
-##               Modified Sternee/Optimal Coverage               ##
+##               Modified Sterne/Optimal Coverage               ##
 ##-------------------------------------------------------------##
 
 # Minimal Cardinality Procedure
