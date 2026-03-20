@@ -31,23 +31,27 @@ find_ci <- function(method, x, conf.level, all, digits) {
     ci <- WilksLR.pois(x, conf.level, all, digits)
     method.str <- "Wilks' Likelihood Ratio (1938)"
     
-  } else if (method == "4") { # Clopper Pearson
-    ci <- ClopperPearson.pois(x, conf.level, all)
-    method.str <- "Clopper-Pearson (1934)"
+  } else if (method == "4") { # Clopper Pearson/Garwood
+    ci <- Garwood.pois(x, conf.level, all)
+    method.str <- "Garwood (1936)"
     
   } else if (method == "5") { # MST/OC
     ci <- OC.pois(x, conf.level, all)
-    method.str <- "Modified Sterne/Optimal Coverage (2014)"
+    method.str <- "Optimal Coverage (2017)"
     
   } else if (method == "6") { # CG
     ci <- CG.pois(x, conf.level, all)
     method.str <- "Crow & Gardner (1959)"
     
-  } else if (method == "7") { # Blaker's
+  } else if (method == "7") { # KB
+    ci <- KB.pois(x, conf.level, all)
+    method.str <- "Kabaila & Byrne (2001)"
+    
+  } else if (method == "8") { # Blaker's
     ci <- Blaker.pois(x, conf.level)
     method.str <- "Blaker (2000)"
     
-  } else if (method == "8") { # CMC
+  } else if (method == "9") { # CMC
     ci <- CMC.pois(x, conf.level, all)
     method.str <- "Conditional Minimal Cardinality (2023)"
     
@@ -60,7 +64,7 @@ find_ci <- function(method, x, conf.level, all, digits) {
   
   ci <- ci |> 
     mutate(interval = paste0("(",round(lower, digits),", ",round(upper,digits),")"),
-           input.str = paste0("method: ", method.str, "\nx-input: ", obs.x,
+           input.str = paste0("method: ", method.str, "\nx-input: ", obs.x, " observed successes",
                               "\nconfidence level: ", 100*conf.level, "%\n"))
 
   

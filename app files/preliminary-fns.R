@@ -127,4 +127,97 @@ find_roots <- function(a, b, conf.level) {
 
 
 
+###########################################################################
+###########################################################################
+###                                                                     ###
+###                  BYRNE & KABAILA SPECIAL FUNCTIONS                  ###
+###                                                                     ###
+###########################################################################
+###########################################################################
+
+
+
+######################################################
+# returns probablity sums: P(a<=X<=b)=sum_{k=a}^b P(X=k) for vector x=a:b
+######################################################
+
+#Poisson(theta)
+pois <- function(x, theta){ 
+  prob=NA 
+  i=1
+  while(i<=length(theta)){ prob[i]=sum(dpois(x,lambda=theta[i])); i=i+1 }
+  return(prob) 
+}
+
+
+######################################################
+#Calculates the acceptance set of SCALAR theta for a given confidence procedure
+######################################################
+
+#Poisson(theta)
+accept.poisson <- function(theta,LL,UL){
+  left = floor(theta)
+  right = ceiling(theta)
+  while( LL[left+1] <=theta & UL[left+1]>theta ){ left = left-1; if(left<0){break} }
+  while( LL[right+1] <=theta & UL[right+1]>theta ){ right = right+1 }
+  return((left+1):(right-1))
+}
+
+
+######################################################
+#Calculates the coverage of VECTOR theta for a given confidence procedure
+######################################################
+
+
+#Poisson(theta)
+cov.poisson <- function(theta,LL,UL){
+  cov=theta
+  for(i in 1:length(theta)){
+    cov[i]=pois(accept.poisson(theta=theta[i],LL=LL,UL=UL),theta=theta[i])
+  }
+  return(cov)
+}
+
+
+############################
+#Special Functions
+###############################
+
+########################################################
+#Poisson(theta)
+########################################################
+# Returns location of the maximum of P_(x,y)(theta)=pois(x:y,theta)=P(a<=X<=y|theta)
+max.pois <- function(x,y){
+  if(x!=0){ 		
+    p=(1/(y-x+1)) 
+    theta.max=x^p
+    i=x+1
+    while(i<=y){theta.max=theta.max*i^p; i=i+1}
+  }
+  else{theta.max = 0}
+  return(theta.max)
+}
+
+
+# Returns the locations of where P_(x,y)(theta)=pois(x:y,theta)=P(a<=X<=y|theta) intersects conf.level
+root2.pois <- function(x,y,conf.level=.95){
+  a=x+1;b=y+1 
+  start=max.pois(x,y)	
+  while(pois(a:b,max.pois(a,b))>=conf.level){a=a+1; b=b+1} ; end=max.pois(a,b)
+  f <- function(theta){return(pois(x:y,theta)-conf.level)}
+  root2=uniroot(f , c(start,end),tol = 10^-10)$root
+  return(root2)	
+}	
+
+root1.pois <- function(x,y,conf.level=.95){	
+  #root 1 only exists if x!0 
+  if(x==0)(stop("no root1 when x=0"))
+  
+  start=0
+  end=max.pois(x,y)
+  f <- function(theta){return(pois(x:y,theta)-conf.level)}
+  root1=uniroot(f , c(start,end),tol = 10^-10)$root  
+  return(root1)	
+}
+
 

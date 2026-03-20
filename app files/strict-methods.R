@@ -19,15 +19,16 @@ library(tidyverse)
 
 
 ##-------------------------------------------------------------##
-##                 Clopper-Pearson for Poisson                 ##
+##                     Garwood for Poisson                     ##
 ##-------------------------------------------------------------##
 
+# AKA Clopper Pearson
 
 # K = observed x...
 # conf.level (%)
 # by default, function returns one (1) confidence interval for x = given K
 
-ClopperPearson.pois <- function(K, conf.level, all = FALSE) {
+Garwood.pois <- function(K, conf.level, all = FALSE) {
   x <- c(0:K)
   alpha <- 1-conf.level
   lower <- c(); upper <- c()
@@ -428,4 +429,54 @@ CMC.pois <-function(K, conf.level, all = F) {
   }
   return(CIs)
 }
+
+
+##-------------------------------------------------------------##
+##                      Kabaila & Byrne (KB)                   ##
+##-------------------------------------------------------------##
+
+
+######################################################
+#Poisson(theta)  
+KB.pois <- function(x, conf.level=.95, all = FALSE){
+  
+  r <- function(x){s=1 ; while( pois((x-s):(x-1), max.pois(x-s,x-1))<=conf.level ){s=s+1}; return(s) }
+  p <- function(x){q=1 ; while( pois((x+1):(x+q), max.pois(x+1,x+q))<=conf.level ){q=q+1}; return(q) }
+  
+  f <- function(lambda,x){return(pois((x-r(x)):(x-1),lambda)-conf.level)}
+  g <- function(lambda,x){return(pois(x:(x+p(x)-1),lambda)-conf.level)}
+  
+  i=1
+  l=x
+  u=x
+  
+  if(x[1]==0){l[1] = 0; u[1] = uniroot(g, c(0,20),tol = 10^-10, x=x[1]) $root ; i=i+1}
+  
+  while(i<=length(x)){
+    
+    # uses 5*UL of scores method to get a good idea how far out uniroot should search for the root
+    z = qnorm(1-(1-conf.level)/2,0,1); b = 4*(x[i] + (1/2)*z^2 + z*sqrt(x[i] + (1/4)*z^2))	
+    
+    a = max.pois((x[i]-r(x[i])),(x[i]-1)) 
+    l[i] = uniroot(f, c(a,b),tol = 10^-10, x=x[i]) $root
+    
+    a = max.pois(x[i],(x[i]+p(x[i])-1))
+    u[i] = uniroot(g, c(a,b),tol = 10^-10, x=x[i]) $root
+    
+    i=i+1
+    
+  }
+
+  
+  CIs <-  data.frame(x=x, lower=l, upper=u)
+  if (all == F) { # indicates that user only wants to output interval for x = K
+    CIs <- CIs |> 
+      filter(x == x) # "filter" only keeps the row in df "CIs" where x = K
+  }
+  return(CIs)
+}
+
+# KB Example
+# ci.KB.pois=KB.pois(x=0:30, conf.level=.95)
+# print(ci.KB.pois)
 

@@ -34,8 +34,10 @@ ui <- page_sidebar(
         inputId = "method",
         label = "Select a Confidence Procedure",
         choices = list("Wald" = 1, "Rao's Score" = 2, "Wilks' Likelihood Ratio" = 3, 
-                       "Analog to Clopper-Pearson" = 4, "Modified Sterne/Optimal Coverage" = 5,
-                       "Crow & Gardner" = 6, "Blaker" = 7, "Conditional Minimal Cardinality" = 8)
+                       "Garwood (Analog to Clopper-Pearson)" = 4,
+                       "Optimal Coverage (Length/Coverage Optimal)" = 5,
+                       "Crow & Gardner" = 6, "Kabaila & Byrne" = 7, "Blaker" = 8,
+                       "Conditional Minimal Cardinality" = 9)
       ),
       
       # slider to choose confidence level
@@ -106,8 +108,9 @@ ui <- page_sidebar(
     max_height = 440,
     tableOutput(outputId = "intervals"),
     # Add a note to users who want CI for a mean
-    div(tags$small(tags$b("Want the confidence interval for mean?"),
-        "Divide the confidence limits by the sample size",tags$i("n")))
+    div(tags$small(tags$b("Want the confidence interval given observed mean number of events?"),
+        "Enter x = Total Number of events,", tags$i("mean * n."), "Divide the confidence
+         limits by the sample size",tags$i("n")))
    )
 )
 
