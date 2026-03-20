@@ -4,18 +4,18 @@
 ##                       For Poisson                           ##
 #################################################################
 
-# Each Strict Method is the confidence procedure for a single Poisson
-
-
-# includes Minimal Cardinality Procedures
-# utilizes functions in file "preliminary-fns.R"
-source(here::here("app files", "preliminary-fns.R"), encoding = "UTF-8")
-
 ##--------------------------------------------------------------##
 ##             loading packages & R scripts                     ##
 ##--------------------------------------------------------------##
 
 library(tidyverse)
+
+# Each Strict Method is the confidence procedure for a single Poisson
+
+
+# includes Minimal Cardinality Procedures
+# utilizes functions in file "preliminary-fns.R"
+source("preliminary-fns.R", encoding = "UTF-8")
 
 
 ##-------------------------------------------------------------##

@@ -10,7 +10,7 @@ library(tidyverse)
 
 
 # Large Sample Procedures (W, RS, Wilks LR)
-source("large-sample-methods.R", encoding = "UTF-8")
+source ("large-sample-methods.R", encoding = "UTF-8")
 
 # Strict Method Procedures (Clopper-Pearson, MST/OC)
 source("strict-methods.R", encoding = "UTF-8")
