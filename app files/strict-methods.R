@@ -9,7 +9,7 @@
 
 # includes Minimal Cardinality Procedures
 # utilizes functions in file "preliminary-fns.R"
-source("preliminary-fns.R", encoding = "UTF-8")
+source(here::here("app files", "preliminary-fns.R"), encoding = "UTF-8")
 
 ##--------------------------------------------------------------##
 ##             loading packages & R scripts                     ##

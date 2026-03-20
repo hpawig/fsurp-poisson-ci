@@ -4,6 +4,8 @@
 # we'll calculate the average length up to K for each strict method
 library(tidyverse)
 
+source(here::here("app files", "strict-methods.R"), encoding = "UTF-8")
+
 #################################################################
 ##       Calculating Average Length for Strict Procedures      ##
 #################################################################
@@ -180,8 +182,8 @@ exp_width_rel_CMC_plot <- expected_widths_table |>
   scale_y_continuous(breaks = seq(0,1.5,0.1)) +
 
   labs(
-    title = "Strict Methods Comparison: Expected Length",
-    subtitle = "Relative Exp. Length to CMC Method (2023)",
+    title = "Strict Methods Comparison: Expected Width",
+    subtitle = "Relative Exp. Width to CMC Method (2023)",
     x = expression(lambda),
     y = ""
   ) +
@@ -208,11 +210,11 @@ exp_width_rel_CMC_plot
 
 # save plot to images folder
 ggsave(filename = here::here("images",
-                             "exp_length_rel_CMC.png"),
+                             "exp_width_rel_CMC.png"),
        width = 6,
        height = 4,
        units = "in",
-       dpi = 200, # change to 400 dpi for better quality
+       dpi = 400, # change to 400 dpi for better quality
        bg = "white"
 )
   
