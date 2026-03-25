@@ -410,9 +410,10 @@ CMC.pois <-function(K, conf.level, all = F) {
   # determine upper endpoints for remaining x:get upper(x) for a <= x <= K
   # once we have lower endpoints for x up to K we can work on upper endpoints 
   # separately. 
-  # These remaining values of upper(x) are determined by upper(x)=get_roots(x+1,m(x+1))$root1 
+  # These remaining values of upper(x) are determined by upper(x)=get_roots(x+1,m(x+2))$root1 
   for(x in a:K){
-    upper[x+1] <- find_roots(x,m[x+1],conf.level)$root1
+    # FIXED
+    upper[x+1] <- find_roots(x+1,m[x+2],conf.level)$root1 # Upper endpoint occurs when the next core rises
     
   }
   
