@@ -22,7 +22,7 @@ source("preliminary-fns.R", encoding = "UTF-8")
 ##                     Garwood for Poisson                     ##
 ##-------------------------------------------------------------##
 
-# AKA Clopper Pearson
+# AKA Clopper Pearson applied to Poisson case.
 
 # K = observed x...
 # conf.level (%)
@@ -439,7 +439,9 @@ CMC.pois <-function(K, conf.level, all = F) {
 ######################################################
 #Poisson(theta)  
 KB.pois <- function(x, conf.level=.95, all = FALSE){
-  
+  if (all == TRUE) { # indicates that user only wants to output interval for x=0 up to given x
+   x <- 0:x
+  }
   r <- function(x){s=1 ; while( pois((x-s):(x-1), max.pois(x-s,x-1))<=conf.level ){s=s+1}; return(s) }
   p <- function(x){q=1 ; while( pois((x+1):(x+q), max.pois(x+1,x+q))<=conf.level ){q=q+1}; return(q) }
   
@@ -469,10 +471,7 @@ KB.pois <- function(x, conf.level=.95, all = FALSE){
 
   
   CIs <-  data.frame(x=x, lower=l, upper=u)
-  if (all == F) { # indicates that user only wants to output interval for x = K
-    CIs <- CIs |> 
-      filter(x == x) # "filter" only keeps the row in df "CIs" where x = K
-  }
+
   return(CIs)
 }
 
