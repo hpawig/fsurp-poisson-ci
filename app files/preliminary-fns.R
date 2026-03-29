@@ -78,12 +78,11 @@ get_mtp <- function(x, lambda) {
 # root 1 is lambda when AC first rises above conf.level
 # root 2 is lambda when AC first goes below conf.level
 
-find_roots <- function(a, b, conf.level) {
+find_roots <- function(a, b, conf.level, root) {
+  if (root %in% c(1,2) == FALSE) {stop("please specify root = 1 or root = 2.")}
   # getting root 1
-  
-  
-  start <- 0
-  end <- AC_max_coords(a,b)$lambda # end root1 search where current AC's max is
+  ac.max <- AC_max_coords(a,b)$lambda
+  end <- ac.max # end root1 search where current AC's max is
   
   # this creates the current curve's function so we can find its root.
   f <- function(lambda) {
@@ -94,35 +93,29 @@ find_roots <- function(a, b, conf.level) {
     }
   }
   
-  if (a != 0) {
-    root1 <- uniroot(f, c(start,end))$root
+  if (root == 1 & a != 0) {
+    root1 <- uniroot(f, c(0,end))$root
+    return(root1)
+  } else if (root == 1 & a == 0) {
+    # Does not exist
+    stop("root1 does not exist for x = 0")
   } else {
-    root1 <- NA # we don't need an AC's "left" root if their {a} = 0.
+    ## now finding root 2
+    
+    # this loop finds the interval of where to search for root2
+    start <- ac.max  # start at current AC's maximum lambda
+    a0 <- a + 1; b0 <- b + 1
+    while (sum(dpois(a0:b0, AC_max_coords(a0, b0)$lambda)) >= conf.level) {
+      a0 <- a0+1 
+      b0 <- b0+1
+    } 
+    end <- AC_max_coords(a0,b0)$lambda # stop search for root 2 where next AC's maximum occurs
+    
+    root2 <- uniroot(f, c(start,end))$root  
+    return(root2)
   }
   
   
-  ## now finding root 2
-  
-  # this loop finds the interval of where to search for root2
-  start <- AC_max_coords(a,b)$lambda # start at current AC's maximum lambda
-  a0 <- a + 1; b0 <- b + 1
-  while (sum(dpois(a0:b0, AC_max_coords(a0, b0)$lambda)) >= conf.level) {
-    a0 <- a0+1 
-    b0 <- b0+1
-  } 
-  end <- AC_max_coords(a0,b0)$lambda # stop search for root 2 where next AC's maximum occurs
-  
-  root2 <- uniroot(f, c(start,end))$root  
-  
-  if(is.na(root1)) {
-    root1 <- root2 # this is for the case of ACs with {a} = 0
-  }  
-  
-  
-  
-  # create df to return
-  roots <- data.frame(root1, root2)
-  return(roots)
 }  
 
 
