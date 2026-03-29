@@ -5,7 +5,7 @@ account: s630ps-hpawig
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 12731908
-bundleId: 11760897
+bundleId: 11775444
 url: https://s630ps-hpawig.shinyapps.io/Poisson_CI_Generator/
 version: 1
 asMultiple: FALSE
