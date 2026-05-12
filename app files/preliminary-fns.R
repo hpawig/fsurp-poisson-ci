@@ -36,7 +36,7 @@ test_coverage <- function(a,b, conf.level) {
   
   # cases to decide how to change a-b: look at if max is above conf level
   
-  if (max_prob > conf.level) {
+  if (max_prob >= conf.level) {
     
     return(TRUE)
     
@@ -94,7 +94,7 @@ find_roots <- function(a, b, conf.level, root) {
   }
   
   if (root == 1 & a != 0) {
-    root1 <- uniroot(f, c(0,end))$root
+    root1 <- uniroot(f, c(0,end),  tol = 1e-10)$root
     return(root1)
   } else if (root == 1 & a == 0) {
     # Does not exist
@@ -111,10 +111,10 @@ find_roots <- function(a, b, conf.level, root) {
     } 
     end <- AC_max_coords(a0,b0)$lambda # stop search for root 2 where next AC's maximum occurs
     
-    root2 <- uniroot(f, c(start,end))$root  
+    root2 <- uniroot(f, c(start,end), tol = 1e-10)$root  
     return(root2)
   }
-  
+
   
 }  
 

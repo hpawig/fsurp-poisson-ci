@@ -15,7 +15,7 @@ library(tidyverse)
 
 # includes Minimal Cardinality Procedures
 # utilizes functions in file "preliminary-fns.R"
-source("preliminary-fns.R", encoding = "UTF-8")
+source(("preliminary-fns.R"), encoding = "UTF-8")
 
 
 ##-------------------------------------------------------------##
@@ -70,7 +70,7 @@ Garwood.pois <- function(K, conf_level, all = FALSE) {
 
 OC.pois <- function(K, conf_level, all = FALSE) {
   x <- c(0:K)
-  
+
   
   # initialize necessary vectors
   lower <- c()
@@ -132,8 +132,8 @@ OC.pois <- function(K, conf_level, all = FALSE) {
   upper <- upper[1:(K+1)]
   x <- x[1:(K+1)] # ensuring all vectors are equal in length. 
   # b/c extra lower endpoints will be cut off
-  
-  
+
+
   
   CIs <- data.frame(x, lower, upper)
   if (all == FALSE) {
@@ -158,75 +158,78 @@ OC.pois <- function(K, conf_level, all = FALSE) {
 CG.pois <- function(K, conf_level, all = FALSE) {
   x <- c(0:K)
   
-  # initialize necessary vectors
   lower <- c()
   upper <- c()
   
-  # step 1  
-  a <- 0 # starting a
-  b <- 0 # starting b
+  a <- 0
+  b <- 0
   lower[1] <- 0
-  
-  
   
   while (a < (K+1)) {
     
-    if((test_coverage(a+1, b+1, conf_level) == T)) { # check AC {a+1}-{b+1} first
+    if (test_coverage(a+1, b+1, conf_level) == T) {
       
       a <- a + 1
-      b <- b + 1   
+      b <- b + 1
       
+      if (is.na(lower[b+1])) lower[b+1] <- find_roots(a, b, conf_level, root=1)
+      if (is.na(upper[a]))   upper[a]   <- find_roots(a, b, conf_level, root=1)
       
-      # setting coincidental endpoints
-      # current b's lower bound where (a+1)-(b+1) rises above conf_level
-      lower[b+1] <- find_roots(a,b,conf_level,root=1)
+    } else if (test_coverage(a+1, b+2, conf_level) == F) {
       
-      # a-1's upper bound is also where (a+1)-(b+1) curve comes above CI
-      upper[a] <- lower[b+1]     
+      lower[(b+1)+1] <- find_roots(a, b, conf_level, root=2)
+      b <- b + 1
       
+    } else if (test_coverage(a+1, b+2, conf_level) == T) {
       
-      # check next AC by increasing cardinality by 1 but also ensure {a} non-decreasing       
-    } else if ((test_coverage(a+1, b+2, conf_level) == F)) { 
+      old_root2 <- find_roots(a, b, conf_level, root=2)
+      best_a <- a + 1
+      best_b <- b + 2
+      while (test_coverage(best_a+1, best_b+1, conf_level) == T) {
+        next_root1 <- tryCatch(
+          find_roots(best_a+1, best_b+1, conf_level, root=1),
+          error = function(e) Inf
+        )
+        if (next_root1 > old_root2) break
+        best_a <- best_a + 1
+        best_b <- best_b + 1
+      }
       
-      lower[(b+1)+1] <- find_roots(a,b,conf_level,root=2) # lower limit for (a+1), aka new b
-      b <- b + 1   
+      root <- old_root2
       
-    }  else if (test_coverage(a+1, b+2, conf_level) == T) {
+      # set lower bounds from b+1 to best_b
+      for (i in (b+1):best_b) {
+        lower[i+1] <- root
+      }
       
-      # setting coincidental endpoint
-      # identical lower endpoint when AC {a+1}--{b+2} is above conf_level
-      lower[(b+2)+1] <- find_roots(a,b,conf_level,root=2) # b+2's lower bound
-      lower[(b+1)+1] <- lower[b+3]  # b+1's lower bound
-      upper[a+1] <- find_roots(a,b,conf_level,root=2)  # a's upper bound
+      # set upper bounds from a+1 to best_a
+      for (i in (a+1):best_a) {
+        upper[i] <- root
+      }
       
-      a <- a + 1
-      b <- b + 2
-      
-    } 
+      a <- best_a
+      b <- best_b
+    }
   }
   
   lower <- lower[1:(K+1)]
   upper <- upper[1:(K+1)]
-  x <- x[1:(K+1)] # ensuring all vectors are equal in length. 
-  # b/c extra lower endpoints will be cut off
+  x     <- x[1:(K+1)]
   
+  CIs <- data.frame(x, lower, upper)
   
-  CIs <- data.frame(x,lower,upper)
-  
-  # all=TRUE represents display all intervals from x=0 to x=observed/user input
-  # use filter to keep rows of the data set "CI" where x = observed (K) and discards those where x != K
-  # to get only 1 row for observed x's CI
   if (all == FALSE) {
-    CIs <- CIs |> 
-      filter(x == K)
+    CIs <- CIs |> filter(x == K)
   }
+  
   return(CIs)
 }
 
 
 
 
-##--------------------------------------------------------------##
+
+x##--------------------------------------------------------------##
 ##                    Blaker's Method (2000)                    ##
 ##--------------------------------------------------------------##
 
@@ -258,7 +261,7 @@ Blaker.pois <- function(K, conf_level, all = F){
     return(min(a1,a2))
   }
   
-  
+
   tol <- 0.0001 #decimal accuracy of ci
   LL <- NA; UL <- NA
   LL[1]=0 # lower for x = 0
@@ -271,7 +274,7 @@ Blaker.pois <- function(K, conf_level, all = F){
   while(accept.blaker.pois(x=0, lambda=u) >= (1-conf_level)){u=u+10^2*tol}; u=u-10^2*tol 
   while(accept.blaker.pois(x=0, lambda=u) >= (1-conf_level)){u=u+10*tol}; u=u-10*tol 
   while(accept.blaker.pois(x=0, lambda=u) >= (1-conf_level)){u=u+tol}
-  
+
   UL[1]=u
   
   for(x in 1:K){
@@ -327,7 +330,7 @@ Blaker.pois <- function(K, conf_level, all = F){
 
 
 
-# utilizes functions in file "preliminary-fns.R"
+# Uses  functions from 'preliminary-fns' 
 # K: largest value of x of interest
 # Based on NB CMC code by Doi, Schilling and Holladay (2023)
 
@@ -337,96 +340,76 @@ CMC.pois <-function(K, conf_level, all=FALSE){
   #For fixed a, m(a) is the smaLL.vecest b such that P(a<=X<=b)>=conf_level
   #so that AC(a,m(a)) is the core of rainbow, RB(a)
   #m(a)'s are neeeded b/c root1(a+1,m(a+1)) determines u(a)
-  a <- 0; b <- 0
-  m <- NA  # initialize vector of m(a)'s, the b for core(a)
-  
-  
-  # Generate all core ACs -----------------------------------------------------------------------
-  
-  
-  while(a <= ((K+1)+1)){ # we generate cores up to 1 more than K+1 to check for core skipping at every x.
+  a=0; b=0
+  m.vec=NA
+  while(a<=K+1){
     # Use curves from current rainbow {AC(a,b),b>=a} until core of next rainbow AC(a+1,m(a+1)) first 
     # rises above level. When transitioning between curves from same rainbow AC(a,b) to AC(a,b+1) 
     # transition when AC(a,b) faLL.vecs below level at root2(a,b) which determines lower limit for b+1
-    while(test_coverage(a, b, conf_level) == F) {
-      b <- b+1
-    }
-    
-    m[a+1]=b
-    a <- a+1
-    b <- b+1 #can start the search at m(a)+1=b+1 b/c m(a+1)>=m(a)+1
+    while(test_coverage(a, b, conf_level) == F){b=b+1}
+    m.vec[a+1]=b
+    a=a+1
+    b=b+1 #can start the search at m(a)+1=b+1 b/c m(a+1)>=m(a)+1
   }
   
+  LL.vec=rep(NA,K+1)
+  UL.vec=rep(NA,K+1)
   
-  
-  # Start search from AC(0-0) -------------------------------------------------------------------
-  LL.vec=rep(NA,K+1); UL.vec=rep(NA,K+1)
-  a <- 0; b <- 0
-  LL.vec[a+1] <- 0
+  a=0; b=0
+  LL.vec[a+1]=0 
   
   #Run until l(K) determined
   while(is.na(LL.vec[K+1])){
-    while(find_roots(a,b,conf_level, root=2)<find_roots(a+1,m[a+2],conf_level, root=1) & is.na(LL.vec[K+1])){
+    while(root2.pois(a,b,conf_level)<root1.pois(a+1,m.vec[a+2],conf_level) & is.na(LL.vec[K+1])){
       b=b+1
-      LL.vec[b+1] <- find_roots(a,b-1, conf_level, root=2) 
+      LL.vec[b+1]=root2.pois(a,b-1, conf_level)
     }
     
     #Exit loop once last needed lower limit (lower limit for x=n) is determined
     if(!is.na(LL.vec[K+1])){break}
     
-    # Set Coincidental Endpoints ------------------------------------------------------------------
     
     # When transitioning between rainbows RB(a) to RB(a+1) we move from curve AC(a,b) to core of 
     # next rainbow AC(a+1, m(a+1)). The location of this transition occurs at root1(a+1,m(a+1)) 
     # and determines both the upper endpoint for a u(a) and the lower endpoints for b+1,...,m(a+1),
     # l(b+1)=...=l(m(a+1)).
-    b.temp <- b
-    a <- a+1
-    b <- m[a+1]
+    b.temp=b
+    a=a+1
+    b=m.vec[a+1]
     for(i in (b.temp+1):min(b,K)){
-      LL.vec[i+1]=find_roots(a,m[a+1], conf_level, root=1)
+      LL.vec[i+1]=root1.pois(a,m.vec[a+1], conf_level)
     }
-    UL.vec[(a-1)+1]=find_roots(a,m[a+1], conf_level, root=1)
+    UL.vec[(a-1)+1]=root1.pois(a,m.vec[a+1], conf_level)
   }
-  
-  
-  
-  # Set Remaining Upper Endpoints UL(x) ---------------------------------------------------------
   
   # Determine upper endpoints for remaining x; i.e. determine u(x) for a<=x<=n
   # B/c once we have lower endpoints for x up to n we can work on upper endpoints 
   # separately. These remaining values of u(x) are determined by u(x)=root1(x+1,m(x+1)). 
-  skipped <- c() # There is also possibility of core skipping, which we will keep track of here.
   
   for(x in a:K){
-    UL.vec[x+1]=find_roots(x+1,m[x+2], conf_level,root=1) # Set upper limit
+    UL.vec[x+1]=root1.pois(x+1,m.vec[x+2], conf_level) # Set upper limit
     
-    # SKIP CHECK: Check if next core is to be skipped.
-    if (x<K & (UL.vec[x+1]>find_roots(x+2, m[x+3], conf_level,root=1))) {
-      UL.vec[x+1] = find_roots(x+2, m[x+3], conf_level,root=1); skipped <- c(skipped,x)
-    }
   }
   
-  # Generate Results Table ----------------------------------------------------------------------
+  
   CI <- data.frame(x=0:K,lower=LL.vec,upper=UL.vec)
   if(all==F){
     CI <- CI %>% 
       filter(x == K)
   }
-  if(length(skipped) > 0) { #if there were any skips (rare)
-    print(paste0("skips occurred for x=", paste(skipped, collapse = ",")))
-  }
   
   return(CI)
 }
+
 
 ###############################################################
 #-------------------------------------------------------------#
 # CMC EXAMPLES                                                #
 #-------------------------------------------------------------#
 ###############################################################
-# CMC.CI=CMC.pois(K=50,conf_level=.95,all=F); CMC.CI
-# CMC.CI=CMC.pois(K=500,conf_level=.95,all=TRUE); CMC.CI
+CMC.CI=CMC.pois(K=100,conf_level=.95,all=F)#; CMC.CI
+CMC.CI=CMC.pois(K=150,conf_level=.95,all=F)#; CMC.CI
+# CMC.CI=CMC.pois(K=500,conf_level=.95,all=TRUE)#; CMC.CI
 
 
 
@@ -439,7 +422,7 @@ CMC.pois <-function(K, conf_level, all=FALSE){
 #Poisson(theta)  
 KB.pois <- function(x, conf_level=.95, all = FALSE){
   if (all == TRUE) { # indicates that user only wants to output interval for x=0 up to given x
-    x <- 0:x
+   x <- 0:x
   }
   r <- function(x){s=1 ; while( pois((x-s):(x-1), max.pois(x-s,x-1))<=conf_level ){s=s+1}; return(s) }
   p <- function(x){q=1 ; while( pois((x+1):(x+q), max.pois(x+1,x+q))<=conf_level ){q=q+1}; return(q) }
@@ -467,10 +450,10 @@ KB.pois <- function(x, conf_level=.95, all = FALSE){
     i=i+1
     
   }
-  
+
   
   CIs <-  data.frame(x=x, lower=l, upper=u)
-  
+
   return(CIs)
 }
 

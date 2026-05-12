@@ -10,7 +10,7 @@ library(tidyverse)
 
 
 # Large Sample Procedures (W, RS, Wilks LR)
-source ("large-sample-methods.R", encoding = "UTF-8")
+source("large-sample-methods.R", encoding = "UTF-8")
 
 # Strict Method Procedures (Clopper-Pearson, MST/OC)
 source("strict-methods.R", encoding = "UTF-8")
@@ -90,6 +90,10 @@ ui <- page_sidebar(
         div("Contact: hpawig@calpoly.edu",
             align = "right", style = "font-size: 8pt"),
         div("Cal Poly, San Luis Obispo",
+            align = "right", style = "font-size: 8pt"),
+        div("Inspiration from ", 
+            a(href = "http://shiny.calpoly.sh/LCO_CI_Generator/", target = "_blank", "the LCO CI Generator by "),
+            a(href = "https://jimmydoi.github.io", target = "_blank", "Jimmy A. Doi"),
             align = "right", style = "font-size: 8pt")
       )
     ), 
