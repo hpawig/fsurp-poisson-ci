@@ -81,6 +81,11 @@ ui <- page_sidebar(
       
       # contact information section
       card_footer(
+        div("App Inspiration from ", 
+            a(href = "http://shiny.calpoly.sh/LCO_CI_Generator/", target = "_blank", "the LCO CI Generator "),
+            "by ",
+            a(href = "https://jimmydoi.github.io", target = "_blank", "Jimmy A. Doi"),
+            align = "right", style = "font-size: 8pt"),
         div("Shiny App by" , 
             a(href = "https://www.linkedin.com/in/hannahpawig/", target = "_blank", "Hannah Pawig"),
             align = "right", style = "font-size: 8pt"),
@@ -90,10 +95,6 @@ ui <- page_sidebar(
         div("Contact: hpawig@calpoly.edu",
             align = "right", style = "font-size: 8pt"),
         div("Cal Poly, San Luis Obispo",
-            align = "right", style = "font-size: 8pt"),
-        div("Inspiration from ", 
-            a(href = "http://shiny.calpoly.sh/LCO_CI_Generator/", target = "_blank", "the LCO CI Generator by "),
-            a(href = "https://jimmydoi.github.io", target = "_blank", "Jimmy A. Doi"),
             align = "right", style = "font-size: 8pt")
       )
     ), 

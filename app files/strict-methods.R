@@ -15,7 +15,7 @@ library(tidyverse)
 
 # includes Minimal Cardinality Procedures
 # utilizes functions in file "preliminary-fns.R"
-source(("preliminary-fns.R"), encoding = "UTF-8")
+source("preliminary-fns.R", encoding = "UTF-8")
 
 
 ##-------------------------------------------------------------##
@@ -229,7 +229,7 @@ CG.pois <- function(K, conf_level, all = FALSE) {
 
 
 
-x##--------------------------------------------------------------##
+##--------------------------------------------------------------##
 ##                    Blaker's Method (2000)                    ##
 ##--------------------------------------------------------------##
 
